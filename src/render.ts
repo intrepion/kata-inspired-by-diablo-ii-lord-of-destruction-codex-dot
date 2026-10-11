@@ -1,27 +1,386 @@
-import {State,Foe,WIDTH,HEIGHT,PILLARS,DISTRICTS} from './game';
-export function draw(canvas:HTMLCanvasElement,s:State,clock:number){const c=canvas.getContext('2d')!;c.clearRect(0,0,WIDTH,HEIGHT);const zone=Math.floor(s.room/2),town=s.mode==='town',t=clock/1000;const tone=town?'#263331':['#302a24','#1d3434','#282535'][zone];c.fillStyle='#080e11';c.fillRect(0,0,WIDTH,HEIGHT);
- // Uneven slabs, hand-engraved diamond seams, and carved perimeter.
- c.fillStyle=tone;c.fillRect(46,50,868,500);for(let y=60;y<550;y+=42)for(let x=50;x<915;x+=64){const h=(Math.sin(x*8+y*37)*10000)%1;c.fillStyle=h>.3?'#ffffff07':'#00000018';c.fillRect(x+2+(y%84?16:0),y+2,60,38);c.strokeStyle='#00000040';c.strokeRect(x+(y%84?16:0),y,64,42)}
- c.strokeStyle='#8b806249';c.lineWidth=2;c.strokeRect(63,72,834,456);c.strokeRect(78,86,804,428);c.strokeStyle='#b59b6a22';c.beginPath();c.ellipse(480,300,140,130,0,0,Math.PI*2);c.ellipse(480,300,116,108,0,0,Math.PI*2);c.stroke();for(let i=0;i<12;i++){const a=i*Math.PI/6;c.beginPath();c.moveTo(480+122*Math.cos(a),300+112*Math.sin(a));c.lineTo(480+133*Math.cos(a),300+123*Math.sin(a));c.stroke()}
- // Gothic buttresses and the upper colonnade.
- for(let x=42;x<945;x+=96){c.fillStyle='#101719';c.fillRect(x,13,38,57);c.fillStyle='#3e4440';c.fillRect(x+3,16,32,42);c.fillStyle='#56564a';c.fillRect(x,12,38,7);c.fillStyle='#080d0f';c.beginPath();c.moveTo(x+11,53);c.lineTo(x+11,34);c.quadraticCurveTo(x+19,20,x+27,34);c.lineTo(x+27,53);c.fill()}
- c.fillStyle='#141b1b';c.fillRect(27,66,23,480);c.fillRect(910,66,23,480);c.fillRect(43,547,874,22);c.fillStyle='#605c493e';c.fillRect(27,66,7,481);c.fillRect(910,66,7,481);c.fillRect(43,547,874,4);
- for(const p of PILLARS){c.fillStyle='#0007';c.beginPath();c.ellipse(p.x+p.w/2+10,p.y+p.h+7,52,23,0,0,Math.PI*2);c.fill();c.fillStyle='#182121';c.fillRect(p.x,p.y,p.w,p.h);c.fillStyle='#444943';c.fillRect(p.x+3,p.y-20,p.w-6,p.h+10);c.fillStyle='#646658';c.fillRect(p.x-4,p.y-23,p.w+8,9);c.fillStyle='#313a35';c.fillRect(p.x+11,p.y-10,p.w-22,p.h-15);c.fillStyle='#8d86692a';c.fillRect(p.x+12,p.y-10,4,p.h-15);c.fillStyle='#626457';c.fillRect(p.x-4,p.y+p.h-12,p.w+8,12)}
- const light=(x:number,y:number,color:string,r:number)=>{const g=c.createRadialGradient(x,y,0,x,y,r);g.addColorStop(0,color);g.addColorStop(1,'#00000000');c.fillStyle=g;c.fillRect(x-r,y-r,r*2,r*2)};
- for(const [x,y] of [[100,104],[850,104],[100,491],[850,491]]){light(x,y,'#d59c3433',100);c.fillStyle='#28261e';c.fillRect(x-5,y,10,18);c.fillStyle='#e8b963';c.beginPath();c.moveTo(x-5,y);c.quadraticCurveTo(x-9,y-10,x+Math.sin(t*5+x)*3,y-21);c.quadraticCurveTo(x+9,y-8,x+5,y);c.fill()}
- if(town){light(480,280,'#dbb76a30',240);c.strokeStyle='#c4a163';c.lineWidth=3;c.beginPath();c.moveTo(435,300);c.lineTo(480,205);c.lineTo(525,300);c.closePath();c.stroke();c.fillStyle='#252a24';c.fillRect(434,305,94,29);c.fillStyle='#b6a480';c.fillRect(425,301,110,9);c.fillStyle='#e9c779';c.beginPath();c.arc(480,266,12+Math.sin(t)*2,0,7);c.fill();keeper(c,580,350,t,s);c.font='14px Georgia';c.fillStyle='#c4ae81';c.textAlign='center';c.fillText('THE LAST LIGHT',480,382);for(let i=0;i<24;i++){const x=280+i*19,y=260+Math.sin(t*.6+i)*80;light(x,y,'#d4af6816',12)}return}
- const room=s.rooms[s.room];
- // Gate clearly changes when the room is won.
- c.fillStyle=room.cleared?'#66a597':'#302c29';c.fillRect(889,266,24,74);light(893,303,room.cleared?'#88efd350':'#ac664b18',100);c.strokeStyle=room.cleared?'#a7e5c6':'#635546';c.lineWidth=3;c.beginPath();c.moveTo(881,343);c.lineTo(881,284);c.quadraticCurveTo(899,244,917,284);c.lineTo(917,343);c.stroke();
- for(const d of room.dangers){c.strokeStyle='#ff725d';c.fillStyle='#ff513329';c.lineWidth=2;c.beginPath();c.arc(d.x,d.y,d.radius,0,7);c.fill();c.stroke();c.beginPath();c.arc(d.x,d.y,d.radius*.65,0,7);c.stroke()}
- for(const f of room.foes){if(f.hp<=0){c.fillStyle='#822d282e';c.beginPath();c.ellipse(f.x,f.y,24,10,0,0,7);c.fill();continue}if(f.windup>0){const r=f.kind==='bell'?135:f.kind==='mire'?95:f.kind==='king'?115:f.kind==='brute'?75:f.kind==='scribe'?48:46;c.fillStyle='#ff664426';c.strokeStyle='#ed8464';c.lineWidth=2;c.beginPath();c.arc(f.tx,f.ty,r,0,7);c.fill();c.stroke()}foe(c,f,t,zone)}
- for(const d of room.drops){const color=['#c9b88c','#75c7b6','#edbd5e'][d.relic.rarity];light(d.x,d.y,color+'30',40);c.strokeStyle=color;c.lineWidth=2;c.beginPath();c.moveTo(d.x,d.y-15);c.lineTo(d.x+8,d.y-3);c.lineTo(d.x,d.y+8);c.lineTo(d.x-8,d.y-3);c.closePath();c.stroke();c.fillStyle=color;c.font='10px sans-serif';c.textAlign='center';c.fillText(d.relic.slot.toUpperCase(),d.x,d.y+22)}
- light(s.x,s.y,'#e5bb6930',230);keeper(c,s.x,s.y,t,s);if(s.attackCd>.25){c.strokeStyle='#f4dea1';c.lineWidth=5;c.beginPath();c.arc(s.x,s.y-15,64,-1.7,1.5);c.stroke()}if(s.novaCd>3.2){c.strokeStyle='#efa968';c.lineWidth=3;c.beginPath();c.arc(s.x,s.y,245*(3.8-s.novaCd)/.6,0,7);c.stroke()}
- // Exploration veil only obscures the undiscovered outer reaches; combat stays readable.
- for(let cy=1;cy<7;cy++)for(let cx=1;cx<11;cx++){const distance=Math.hypot(cx*80+40-s.x,cy*75+37-s.y);if(distance>330&&!room.seen.includes(cx+cy*12)){c.fillStyle='#060b1070';c.fillRect(cx*80,cy*75,80,75)}}
- for(let i=0;i<35;i++){const x=(i*137+t*8)%960,y=(i*79+Math.sin(t+i)*15)%600;c.fillStyle=DISTRICTS[zone].color+'38';c.fillRect(x,y,1.5,1.5)}
- // Small surveyed map.
- c.fillStyle='#071011ce';c.fillRect(785,77,100,70);c.strokeStyle='#a08f5740';c.strokeRect(785,77,100,70);for(const n of room.seen){c.fillStyle='#4b665855';c.fillRect(785+(n%12)*8.3,77+Math.floor(n/12)*8.75,8,8)}c.fillStyle='#efcf8f';c.fillRect(785+s.x/WIDTH*100-2,77+s.y/HEIGHT*70-2,4,4);c.font='8px sans-serif';c.fillStyle='#a4b3a3';c.textAlign='right';c.fillText('SURVEY',885,157)
+import { State, Foe, WIDTH, HEIGHT, PILLARS, DISTRICTS } from "./game";
+export function draw(canvas: HTMLCanvasElement, s: State, clock: number) {
+  const c = canvas.getContext("2d")!;
+  c.clearRect(0, 0, WIDTH, HEIGHT);
+  const zone = Math.floor(s.room / 2),
+    town = s.mode === "town",
+    t = clock / 1000;
+  const tone = town ? "#263331" : ["#302a24", "#1d3434", "#282535"][zone];
+  c.fillStyle = "#080e11";
+  c.fillRect(0, 0, WIDTH, HEIGHT);
+  // Uneven slabs, hand-engraved diamond seams, and carved perimeter.
+  c.fillStyle = tone;
+  c.fillRect(46, 50, 868, 500);
+  for (let y = 60; y < 550; y += 42)
+    for (let x = 50; x < 915; x += 64) {
+      const h = (Math.sin(x * 8 + y * 37) * 10000) % 1;
+      c.fillStyle = h > 0.3 ? "#ffffff07" : "#00000018";
+      c.fillRect(x + 2 + (y % 84 ? 16 : 0), y + 2, 60, 38);
+      c.strokeStyle = "#00000040";
+      c.strokeRect(x + (y % 84 ? 16 : 0), y, 64, 42);
+    }
+  c.strokeStyle = "#8b806249";
+  c.lineWidth = 2;
+  c.strokeRect(63, 72, 834, 456);
+  c.strokeRect(78, 86, 804, 428);
+  c.strokeStyle = "#b59b6a22";
+  c.beginPath();
+  c.ellipse(480, 300, 140, 130, 0, 0, Math.PI * 2);
+  c.ellipse(480, 300, 116, 108, 0, 0, Math.PI * 2);
+  c.stroke();
+  for (let i = 0; i < 12; i++) {
+    const a = (i * Math.PI) / 6;
+    c.beginPath();
+    c.moveTo(480 + 122 * Math.cos(a), 300 + 112 * Math.sin(a));
+    c.lineTo(480 + 133 * Math.cos(a), 300 + 123 * Math.sin(a));
+    c.stroke();
+  }
+  // Gothic buttresses and the upper colonnade.
+  for (let x = 42; x < 945; x += 96) {
+    c.fillStyle = "#101719";
+    c.fillRect(x, 13, 38, 57);
+    c.fillStyle = "#3e4440";
+    c.fillRect(x + 3, 16, 32, 42);
+    c.fillStyle = "#56564a";
+    c.fillRect(x, 12, 38, 7);
+    c.fillStyle = "#080d0f";
+    c.beginPath();
+    c.moveTo(x + 11, 53);
+    c.lineTo(x + 11, 34);
+    c.quadraticCurveTo(x + 19, 20, x + 27, 34);
+    c.lineTo(x + 27, 53);
+    c.fill();
+  }
+  c.fillStyle = "#141b1b";
+  c.fillRect(27, 66, 23, 480);
+  c.fillRect(910, 66, 23, 480);
+  c.fillRect(43, 547, 874, 22);
+  c.fillStyle = "#605c493e";
+  c.fillRect(27, 66, 7, 481);
+  c.fillRect(910, 66, 7, 481);
+  c.fillRect(43, 547, 874, 4);
+  for (const p of PILLARS) {
+    c.fillStyle = "#0007";
+    c.beginPath();
+    c.ellipse(p.x + p.w / 2 + 10, p.y + p.h + 7, 52, 23, 0, 0, Math.PI * 2);
+    c.fill();
+    c.fillStyle = "#182121";
+    c.fillRect(p.x, p.y, p.w, p.h);
+    c.fillStyle = "#444943";
+    c.fillRect(p.x + 3, p.y - 20, p.w - 6, p.h + 10);
+    c.fillStyle = "#646658";
+    c.fillRect(p.x - 4, p.y - 23, p.w + 8, 9);
+    c.fillStyle = "#313a35";
+    c.fillRect(p.x + 11, p.y - 10, p.w - 22, p.h - 15);
+    c.fillStyle = "#8d86692a";
+    c.fillRect(p.x + 12, p.y - 10, 4, p.h - 15);
+    c.fillStyle = "#626457";
+    c.fillRect(p.x - 4, p.y + p.h - 12, p.w + 8, 12);
+  }
+  const light = (x: number, y: number, color: string, r: number) => {
+    const g = c.createRadialGradient(x, y, 0, x, y, r);
+    g.addColorStop(0, color);
+    g.addColorStop(1, "#00000000");
+    c.fillStyle = g;
+    c.fillRect(x - r, y - r, r * 2, r * 2);
+  };
+  for (const [x, y] of [
+    [100, 104],
+    [850, 104],
+    [100, 491],
+    [850, 491],
+  ]) {
+    light(x, y, "#d59c3433", 100);
+    c.fillStyle = "#28261e";
+    c.fillRect(x - 5, y, 10, 18);
+    c.fillStyle = "#e8b963";
+    c.beginPath();
+    c.moveTo(x - 5, y);
+    c.quadraticCurveTo(x - 9, y - 10, x + Math.sin(t * 5 + x) * 3, y - 21);
+    c.quadraticCurveTo(x + 9, y - 8, x + 5, y);
+    c.fill();
+  }
+  if (town) {
+    light(480, 280, "#dbb76a30", 240);
+    c.strokeStyle = "#c4a163";
+    c.lineWidth = 3;
+    c.beginPath();
+    c.moveTo(435, 300);
+    c.lineTo(480, 205);
+    c.lineTo(525, 300);
+    c.closePath();
+    c.stroke();
+    c.fillStyle = "#252a24";
+    c.fillRect(434, 305, 94, 29);
+    c.fillStyle = "#b6a480";
+    c.fillRect(425, 301, 110, 9);
+    c.fillStyle = "#e9c779";
+    c.beginPath();
+    c.arc(480, 266, 12 + Math.sin(t) * 2, 0, 7);
+    c.fill();
+    keeper(c, 580, 350, t, s);
+    c.font = "14px Georgia";
+    c.fillStyle = "#c4ae81";
+    c.textAlign = "center";
+    c.fillText("THE LAST LIGHT", 480, 382);
+    for (let i = 0; i < 24; i++) {
+      const x = 280 + i * 19,
+        y = 260 + Math.sin(t * 0.6 + i) * 80;
+      light(x, y, "#d4af6816", 12);
+    }
+    return;
+  }
+  const room = s.rooms[s.room];
+  // Gate clearly changes when the room is won.
+  c.fillStyle = room.cleared ? "#66a597" : "#302c29";
+  c.fillRect(889, 266, 24, 74);
+  light(893, 303, room.cleared ? "#88efd350" : "#ac664b18", 100);
+  c.strokeStyle = room.cleared ? "#a7e5c6" : "#635546";
+  c.lineWidth = 3;
+  c.beginPath();
+  c.moveTo(881, 343);
+  c.lineTo(881, 284);
+  c.quadraticCurveTo(899, 244, 917, 284);
+  c.lineTo(917, 343);
+  c.stroke();
+  for (const d of room.dangers) {
+    c.strokeStyle = "#ff725d";
+    c.fillStyle = "#ff513329";
+    c.lineWidth = 2;
+    c.beginPath();
+    c.arc(d.x, d.y, d.radius, 0, 7);
+    c.fill();
+    c.stroke();
+    c.beginPath();
+    c.arc(d.x, d.y, d.radius * 0.65, 0, 7);
+    c.stroke();
+  }
+  for (const f of room.foes) {
+    if (f.hp <= 0) {
+      c.fillStyle = "#822d282e";
+      c.beginPath();
+      c.ellipse(f.x, f.y, 24, 10, 0, 0, 7);
+      c.fill();
+      continue;
+    }
+    if (f.windup > 0) {
+      const r =
+        f.kind === "bell"
+          ? 135
+          : f.kind === "mire"
+            ? 95
+            : f.kind === "king"
+              ? 115
+              : f.kind === "brute"
+                ? 75
+                : f.kind === "scribe"
+                  ? 48
+                  : 46;
+      c.fillStyle = "#ff664426";
+      c.strokeStyle = "#ed8464";
+      c.lineWidth = 2;
+      c.beginPath();
+      c.arc(f.tx, f.ty, r, 0, 7);
+      c.fill();
+      c.stroke();
+    }
+    foe(c, f, t, zone);
+  }
+  for (const d of room.drops) {
+    const color = ["#c9b88c", "#75c7b6", "#edbd5e"][d.relic.rarity];
+    light(d.x, d.y, color + "30", 40);
+    c.strokeStyle = color;
+    c.lineWidth = 2;
+    c.beginPath();
+    c.moveTo(d.x, d.y - 15);
+    c.lineTo(d.x + 8, d.y - 3);
+    c.lineTo(d.x, d.y + 8);
+    c.lineTo(d.x - 8, d.y - 3);
+    c.closePath();
+    c.stroke();
+    c.fillStyle = color;
+    c.font = "10px sans-serif";
+    c.textAlign = "center";
+    c.fillText(d.relic.slot.toUpperCase(), d.x, d.y + 22);
+  }
+  light(s.x, s.y, "#e5bb6930", 230);
+  keeper(c, s.x, s.y, t, s);
+  if (s.attackCd > 0.25) {
+    c.strokeStyle = "#f4dea1";
+    c.lineWidth = 5;
+    c.beginPath();
+    c.arc(s.x, s.y - 15, 64, -1.7, 1.5);
+    c.stroke();
+  }
+  if (s.novaCd > 3.2) {
+    c.strokeStyle = "#efa968";
+    c.lineWidth = 3;
+    c.beginPath();
+    c.arc(s.x, s.y, (245 * (3.8 - s.novaCd)) / 0.6, 0, 7);
+    c.stroke();
+  }
+  // Exploration veil only obscures the undiscovered outer reaches; combat stays readable.
+  for (let cy = 1; cy < 7; cy++)
+    for (let cx = 1; cx < 11; cx++) {
+      const distance = Math.hypot(cx * 80 + 40 - s.x, cy * 75 + 37 - s.y);
+      if (distance > 330 && !room.seen.includes(cx + cy * 12)) {
+        c.fillStyle = "#060b1070";
+        c.fillRect(cx * 80, cy * 75, 80, 75);
+      }
+    }
+  for (let i = 0; i < 35; i++) {
+    const x = (i * 137 + t * 8) % 960,
+      y = (i * 79 + Math.sin(t + i) * 15) % 600;
+    c.fillStyle = DISTRICTS[zone].color + "38";
+    c.fillRect(x, y, 1.5, 1.5);
+  }
+  // Small surveyed map.
+  c.fillStyle = "#071011ce";
+  c.fillRect(785, 77, 100, 70);
+  c.strokeStyle = "#a08f5740";
+  c.strokeRect(785, 77, 100, 70);
+  for (const n of room.seen) {
+    c.fillStyle = "#4b665855";
+    c.fillRect(785 + (n % 12) * 8.3, 77 + Math.floor(n / 12) * 8.75, 8, 8);
+  }
+  c.fillStyle = "#efcf8f";
+  c.fillRect(785 + (s.x / WIDTH) * 100 - 2, 77 + (s.y / HEIGHT) * 70 - 2, 4, 4);
+  c.font = "8px sans-serif";
+  c.fillStyle = "#a4b3a3";
+  c.textAlign = "right";
+  c.fillText("SURVEY", 885, 157);
 }
-function keeper(c:CanvasRenderingContext2D,x:number,y:number,t:number,s:State){c.save();c.translate(x,y);c.fillStyle='#0009';c.beginPath();c.ellipse(0,9,20,9,0,0,7);c.fill();const b=Math.sin(t*5)*1;c.fillStyle=s.invulnerable>0?'#bce9ce':'#947d62';c.beginPath();c.moveTo(0,-38+b);c.quadraticCurveTo(-14,-32,-17,3);c.lineTo(0,8);c.lineTo(17,3);c.quadraticCurveTo(15,-31,0,-38+b);c.fill();c.fillStyle='#354c4d';c.beginPath();c.moveTo(0,-25);c.lineTo(-13,5);c.lineTo(13,5);c.fill();c.strokeStyle='#b9a885';c.lineWidth=2;c.beginPath();c.moveTo(-12,-20);c.lineTo(-24,-7);c.lineTo(-30,14);c.stroke();c.strokeStyle='#e9d7aa';c.lineWidth=3;c.beginPath();c.moveTo(12,-17);c.lineTo(30,-36);c.stroke();c.fillStyle='#131c1d';c.beginPath();c.ellipse(0,-27+b,7,9,0,0,7);c.fill();c.fillStyle='#ffdb87';c.fillRect(-27,-8,7,10);c.fillStyle='#f3d8ae';c.fillRect(-3,-28,6,2);c.restore()}
-function foe(c:CanvasRenderingContext2D,f:Foe,t:number,zone:number){const boss=['bell','mire','king'].includes(f.kind),size=boss?1.7:f.kind==='brute'?1.3:1;c.save();c.translate(f.x,f.y);c.scale(size,size);c.fillStyle='#0009';c.beginPath();c.ellipse(0,7,21,10,0,0,7);c.fill();const b=Math.sin(t*3+f.id)*2;const color=f.kind==='scribe'?'#658c92':f.kind==='brute'?'#877569':boss?['#bb9566','#6ba396','#9e91bc'][zone]:'#6a7b6d';c.fillStyle=color;c.beginPath();c.moveTo(0,-37+b);c.lineTo(-13,-22);c.lineTo(-19,6);c.lineTo(-7,2);c.lineTo(0,9);c.lineTo(8,2);c.lineTo(20,6);c.lineTo(12,-21);c.closePath();c.fill();c.fillStyle='#131a1c';c.beginPath();c.ellipse(0,-25+b,7,10,0,0,7);c.fill();c.fillStyle=f.windup>0?'#ffb373':'#d9b69a';c.fillRect(-5,-27+b,3,2);c.fillRect(3,-27+b,3,2);c.strokeStyle=color;c.lineWidth=4;c.beginPath();c.moveTo(-11,-22);c.lineTo(-25,-9);c.moveTo(11,-22);c.lineTo(25,-12);c.stroke();if(f.kind==='brute'||f.kind==='bell'){c.fillStyle='#646b63';c.fillRect(23,-26,6,28);c.beginPath();c.ellipse(26,-27,13,8,0,0,7);c.fill()}if(f.kind==='scribe'||f.kind==='mire'){c.strokeStyle='#a4b8a2';c.lineWidth=2;c.beginPath();c.moveTo(24,4);c.lineTo(24,-41);c.stroke();c.fillStyle='#8fddc5';c.beginPath();c.arc(24,-42,5,0,7);c.fill()}if(f.kind==='king'){c.fillStyle='#d4b67b';c.beginPath();c.moveTo(-10,-35);c.lineTo(-12,-46);c.lineTo(-3,-39);c.lineTo(0,-50);c.lineTo(5,-40);c.lineTo(12,-46);c.lineTo(10,-35);c.fill()}c.restore();c.fillStyle='#151b1d';c.fillRect(f.x-23*size,f.y-52*size,46*size,4);c.fillStyle=boss?'#ddb77b':'#c37566';c.fillRect(f.x-23*size,f.y-52*size,46*size*f.hp/f.maxHp,4)}
+function keeper(
+  c: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  t: number,
+  s: State,
+) {
+  c.save();
+  c.translate(x, y);
+  c.fillStyle = "#0009";
+  c.beginPath();
+  c.ellipse(0, 9, 20, 9, 0, 0, 7);
+  c.fill();
+  const b = Math.sin(t * 5) * 1;
+  c.fillStyle = s.invulnerable > 0 ? "#bce9ce" : "#947d62";
+  c.beginPath();
+  c.moveTo(0, -38 + b);
+  c.quadraticCurveTo(-14, -32, -17, 3);
+  c.lineTo(0, 8);
+  c.lineTo(17, 3);
+  c.quadraticCurveTo(15, -31, 0, -38 + b);
+  c.fill();
+  c.fillStyle = "#354c4d";
+  c.beginPath();
+  c.moveTo(0, -25);
+  c.lineTo(-13, 5);
+  c.lineTo(13, 5);
+  c.fill();
+  c.strokeStyle = "#b9a885";
+  c.lineWidth = 2;
+  c.beginPath();
+  c.moveTo(-12, -20);
+  c.lineTo(-24, -7);
+  c.lineTo(-30, 14);
+  c.stroke();
+  c.strokeStyle = "#e9d7aa";
+  c.lineWidth = 3;
+  c.beginPath();
+  c.moveTo(12, -17);
+  c.lineTo(30, -36);
+  c.stroke();
+  c.fillStyle = "#131c1d";
+  c.beginPath();
+  c.ellipse(0, -27 + b, 7, 9, 0, 0, 7);
+  c.fill();
+  c.fillStyle = "#ffdb87";
+  c.fillRect(-27, -8, 7, 10);
+  c.fillStyle = "#f3d8ae";
+  c.fillRect(-3, -28, 6, 2);
+  c.restore();
+}
+function foe(c: CanvasRenderingContext2D, f: Foe, t: number, zone: number) {
+  const boss = ["bell", "mire", "king"].includes(f.kind),
+    size = boss ? 1.7 : f.kind === "brute" ? 1.3 : 1;
+  c.save();
+  c.translate(f.x, f.y);
+  c.scale(size, size);
+  c.fillStyle = "#0009";
+  c.beginPath();
+  c.ellipse(0, 7, 21, 10, 0, 0, 7);
+  c.fill();
+  const b = Math.sin(t * 3 + f.id) * 2;
+  const color =
+    f.kind === "scribe"
+      ? "#658c92"
+      : f.kind === "brute"
+        ? "#877569"
+        : boss
+          ? ["#bb9566", "#6ba396", "#9e91bc"][zone]
+          : "#6a7b6d";
+  c.fillStyle = color;
+  c.beginPath();
+  c.moveTo(0, -37 + b);
+  c.lineTo(-13, -22);
+  c.lineTo(-19, 6);
+  c.lineTo(-7, 2);
+  c.lineTo(0, 9);
+  c.lineTo(8, 2);
+  c.lineTo(20, 6);
+  c.lineTo(12, -21);
+  c.closePath();
+  c.fill();
+  c.fillStyle = "#131a1c";
+  c.beginPath();
+  c.ellipse(0, -25 + b, 7, 10, 0, 0, 7);
+  c.fill();
+  c.fillStyle = f.windup > 0 ? "#ffb373" : "#d9b69a";
+  c.fillRect(-5, -27 + b, 3, 2);
+  c.fillRect(3, -27 + b, 3, 2);
+  c.strokeStyle = color;
+  c.lineWidth = 4;
+  c.beginPath();
+  c.moveTo(-11, -22);
+  c.lineTo(-25, -9);
+  c.moveTo(11, -22);
+  c.lineTo(25, -12);
+  c.stroke();
+  if (f.kind === "brute" || f.kind === "bell") {
+    c.fillStyle = "#646b63";
+    c.fillRect(23, -26, 6, 28);
+    c.beginPath();
+    c.ellipse(26, -27, 13, 8, 0, 0, 7);
+    c.fill();
+  }
+  if (f.kind === "scribe" || f.kind === "mire") {
+    c.strokeStyle = "#a4b8a2";
+    c.lineWidth = 2;
+    c.beginPath();
+    c.moveTo(24, 4);
+    c.lineTo(24, -41);
+    c.stroke();
+    c.fillStyle = "#8fddc5";
+    c.beginPath();
+    c.arc(24, -42, 5, 0, 7);
+    c.fill();
+  }
+  if (f.kind === "king") {
+    c.fillStyle = "#d4b67b";
+    c.beginPath();
+    c.moveTo(-10, -35);
+    c.lineTo(-12, -46);
+    c.lineTo(-3, -39);
+    c.lineTo(0, -50);
+    c.lineTo(5, -40);
+    c.lineTo(12, -46);
+    c.lineTo(10, -35);
+    c.fill();
+  }
+  c.restore();
+  c.fillStyle = "#151b1d";
+  c.fillRect(f.x - 23 * size, f.y - 52 * size, 46 * size, 4);
+  c.fillStyle = boss ? "#ddb77b" : "#c37566";
+  c.fillRect(f.x - 23 * size, f.y - 52 * size, (46 * size * f.hp) / f.maxHp, 4);
+}

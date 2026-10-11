@@ -1,13 +1,172 @@
-import {describe,it,expect} from 'vitest';
-import * as G from '../src/game';
-describe('campaign lifecycle commands',()=>{
- it('death requires retry; repeated retry charges gold only once',()=>{const s=G.newGame(1);G.enter(s);s.gold=100;s.invulnerable=0;G.hurt(s,1000);expect(s.mode).toBe('dead');const hp=s.hp;G.tick(s,1,{dx:1,dy:0,attack:true});expect(s.hp).toBe(hp);expect(G.recall(s)).toBe(false);expect(G.retry(s)).toBe(true);expect(s.gold).toBe(80);expect(s.hp).toBe(G.stats(s).maxHp);expect(s.flasks).toBe(3);expect(G.retry(s)).toBe(false);expect(s.gold).toBe(80)});
- it('recall and reload preserve wounded enemies and drops',()=>{const s=G.newGame(3);G.enter(s);const f=s.rooms[0].foes[0];s.x=f.x-40;s.y=f.y;G.strike(s);const hp=f.hp;G.recall(s);const loaded=G.restore(G.serialize(s))!;G.enter(loaded);expect(loaded.rooms[0].foes[0].hp).toBe(hp);expect(loaded.hp).toBe(G.stats(loaded).maxHp)});
- it('gates cannot skip living foes; final gate ends campaign and next cycle resets encounters only',()=>{const s=G.newGame(4);G.enter(s);expect(G.next(s)).toBe(false);for(let room=0;room<6;room++){s.rooms[room].cleared=true;s.rooms[room].foes.forEach(f=>f.hp=0);expect(G.next(s)).toBe(true)}expect(s.mode).toBe('ending');const relic=s.gear.weapon;expect(G.newCycle(s)).toBe(true);expect(s.cycle).toBe(2);expect(s.room).toBe(0);expect(s.rooms[0].cleared).toBe(false);expect(s.gear.weapon).toEqual(relic);expect(s.rooms[5].foes[0].maxHp).toBe(540);expect(G.newCycle(s)).toBe(false)});
- it('full pack leaves a dropped relic in the chamber until space is freed',()=>{const s=G.newGame(9);G.enter(s);for(let i=0;i<12;i++)s.pack.push(G.makeRelic(s,'weapon',1));const relic=G.makeRelic(s,'charm',2);s.rooms[0].drops.push({x:s.x,y:s.y,relic});expect(G.collect(s)).toBe(0);expect(s.rooms[0].drops).toHaveLength(1);G.salvage(s,s.pack[0].id);expect(G.collect(s)).toBe(1);expect(s.pack).toHaveLength(12);expect(s.pack.some(r=>r.id===relic.id)).toBe(true);expect(G.collect(s)).toBe(0)});
- it('ability costs and cooldowns prevent repeated casts; flask never wastes at full health',()=>{const s=G.newGame(12);G.enter(s);expect(G.flask(s)).toBe(false);const mana=s.mana;expect(G.nova(s)).toBe(true);expect(G.nova(s)).toBe(false);expect(s.mana).toBe(mana-25);expect(G.dash(s,1,0)).toBe(true);expect(G.dash(s,1,0)).toBe(false);s.hp=1;expect(G.flask(s)).toBe(true);expect(s.hp).toBe(71);expect(s.flasks).toBe(2)});
- it('skill points cannot be spent twice and stats reflect the discipline',()=>{const s=G.newGame(7);s.points=1;const attack=G.stats(s).attack;expect(G.learn(s,'edge')).toBe(true);expect(G.stats(s).attack).toBe(attack+6);expect(G.learn(s,'edge')).toBe(false);expect(s.ranks.edge).toBe(1)});
- it('long frame cannot teleport through walls or apply seconds of combat',()=>{const s=G.newGame(15);G.enter(s);s.x=320;s.y=210;G.tick(s,10,{dx:1,dy:0});expect(s.x).toBe(320);expect(s.time).toBe(.05);s.mode='town';const time=s.time;G.tick(s,10,{dx:1,dy:0});expect(s.time).toBe(time)});
- it('malformed nested saves never reach the live game',()=>{const s=G.newGame(1);const samples=[{...s,rooms:[]},{...s,ranks:null},{...s,x:1e30},{...s,gear:{weapon:{}}},{...s,pack:[{id:9}]},{...s,rooms:s.rooms.map(r=>({...r,foes:[{kind:'unknown'}]}))}];for(const sample of samples)expect(G.restore(JSON.stringify(sample))).toBeNull()});
- it('foes lock a visible windup before harming the keeper',()=>{const s=G.newGame(8);G.enter(s);const f=s.rooms[0].foes[0];s.x=f.x;s.y=f.y;s.invulnerable=0;f.timer=0;const hp=s.hp;G.tick(s,.05,{dx:0,dy:0});expect(f.windup).toBeGreaterThan(0);expect(s.hp).toBe(hp);for(let i=0;i<16;i++)G.tick(s,.05,{dx:0,dy:0});expect(s.hp).toBeLessThan(hp)});
+import { describe, it, expect } from "vitest";
+import * as G from "../src/game";
+describe("campaign lifecycle commands", () => {
+  it("death requires retry; repeated retry charges gold only once", () => {
+    const s = G.newGame(1);
+    G.enter(s);
+    s.gold = 100;
+    s.invulnerable = 0;
+    G.hurt(s, 1000);
+    expect(s.mode).toBe("dead");
+    const hp = s.hp;
+    G.tick(s, 1, { dx: 1, dy: 0, attack: true });
+    expect(s.hp).toBe(hp);
+    expect(G.recall(s)).toBe(false);
+    expect(G.retry(s)).toBe(true);
+    expect(s.gold).toBe(80);
+    expect(s.hp).toBe(G.stats(s).maxHp);
+    expect(s.flasks).toBe(3);
+    expect(G.retry(s)).toBe(false);
+    expect(s.gold).toBe(80);
+  });
+  it("recall and reload preserve wounded enemies and drops", () => {
+    const s = G.newGame(3);
+    G.enter(s);
+    const f = s.rooms[0].foes[0];
+    s.x = f.x - 40;
+    s.y = f.y;
+    G.strike(s);
+    const hp = f.hp;
+    G.recall(s);
+    const loaded = G.restore(G.serialize(s))!;
+    G.enter(loaded);
+    expect(loaded.rooms[0].foes[0].hp).toBe(hp);
+    expect(loaded.hp).toBe(G.stats(loaded).maxHp);
+  });
+  it("gates cannot skip living foes; final gate ends campaign and next cycle resets encounters only", () => {
+    const s = G.newGame(4);
+    G.enter(s);
+    expect(G.next(s)).toBe(false);
+    for (let room = 0; room < 6; room++) {
+      s.rooms[room].cleared = true;
+      s.rooms[room].foes.forEach((f) => (f.hp = 0));
+      expect(G.next(s)).toBe(true);
+    }
+    expect(s.mode).toBe("ending");
+    const relic = s.gear.weapon;
+    expect(G.newCycle(s)).toBe(true);
+    expect(s.cycle).toBe(2);
+    expect(s.room).toBe(0);
+    expect(s.rooms[0].cleared).toBe(false);
+    expect(s.gear.weapon).toEqual(relic);
+    expect(s.rooms[5].foes[0].maxHp).toBe(540);
+    expect(G.newCycle(s)).toBe(false);
+  });
+  it("full pack leaves a dropped relic in the chamber until space is freed", () => {
+    const s = G.newGame(9);
+    G.enter(s);
+    for (let i = 0; i < 12; i++) s.pack.push(G.makeRelic(s, "weapon", 1));
+    const relic = G.makeRelic(s, "charm", 2);
+    s.rooms[0].drops.push({ x: s.x, y: s.y, relic });
+    expect(G.collect(s)).toBe(0);
+    expect(s.rooms[0].drops).toHaveLength(1);
+    G.salvage(s, s.pack[0].id);
+    expect(G.collect(s)).toBe(1);
+    expect(s.pack).toHaveLength(12);
+    expect(s.pack.some((r) => r.id === relic.id)).toBe(true);
+    expect(G.collect(s)).toBe(0);
+  });
+  it("ability costs and cooldowns prevent repeated casts; flask never wastes at full health", () => {
+    const s = G.newGame(12);
+    G.enter(s);
+    expect(G.flask(s)).toBe(false);
+    const mana = s.mana;
+    expect(G.nova(s)).toBe(true);
+    expect(G.nova(s)).toBe(false);
+    expect(s.mana).toBe(mana - 25);
+    expect(G.dash(s, 1, 0)).toBe(true);
+    expect(G.dash(s, 1, 0)).toBe(false);
+    s.hp = 1;
+    expect(G.flask(s)).toBe(true);
+    expect(s.hp).toBe(71);
+    expect(s.flasks).toBe(2);
+  });
+  it("skill points cannot be spent twice and stats reflect the discipline", () => {
+    const s = G.newGame(7);
+    s.points = 1;
+    const attack = G.stats(s).attack;
+    expect(G.learn(s, "edge")).toBe(true);
+    expect(G.stats(s).attack).toBe(attack + 6);
+    expect(G.learn(s, "edge")).toBe(false);
+    expect(s.ranks.edge).toBe(1);
+  });
+  it("long frame cannot teleport through walls or apply seconds of combat", () => {
+    const s = G.newGame(15);
+    G.enter(s);
+    s.x = 320;
+    s.y = 210;
+    G.tick(s, 10, { dx: 1, dy: 0 });
+    expect(s.x).toBe(320);
+    expect(s.time).toBe(0.05);
+    s.mode = "town";
+    const time = s.time;
+    G.tick(s, 10, { dx: 1, dy: 0 });
+    expect(s.time).toBe(time);
+  });
+  it("malformed nested saves never reach the live game", () => {
+    const s = G.newGame(1);
+    const samples = [
+      { ...s, rooms: [] },
+      { ...s, ranks: null },
+      { ...s, x: 1e30 },
+      { ...s, gear: { weapon: {} } },
+      { ...s, pack: [{ id: 9 }] },
+      {
+        ...s,
+        rooms: s.rooms.map((r) => ({ ...r, foes: [{ kind: "unknown" }] })),
+      },
+    ];
+    for (const sample of samples)
+      expect(G.restore(JSON.stringify(sample))).toBeNull();
+  });
+  it("foes lock a visible windup before harming the keeper", () => {
+    const s = G.newGame(8);
+    G.enter(s);
+    const f = s.rooms[0].foes[0];
+    s.x = f.x;
+    s.y = f.y;
+    s.invulnerable = 0;
+    f.timer = 0;
+    const hp = s.hp;
+    G.tick(s, 0.05, { dx: 0, dy: 0 });
+    expect(f.windup).toBeGreaterThan(0);
+    expect(s.hp).toBe(hp);
+    for (let i = 0; i < 16; i++) G.tick(s, 0.05, { dx: 0, dy: 0 });
+    expect(s.hp).toBeLessThan(hp);
+  });
+});
+
+it("completed and long-blocked enemy cooldowns remain valid saves", () => {
+  const s = G.newGame(1);
+  G.enter(s);
+  const f = s.rooms[0].foes[0];
+  s.rooms[0].foes = s.rooms[0].foes.slice(0, 1);
+  s.x = f.x;
+  s.y = f.y;
+  f.timer = 0;
+  s.invulnerable = 1000;
+  for (let i = 0; i < 14; i++) G.tick(s, 0.05, { dx: 0, dy: 0 });
+  expect(f.windup).toBe(0);
+  expect(G.restore(G.serialize(s))).toEqual(s);
+  s.x = 300;
+  s.y = 215;
+  f.x = 430;
+  f.y = 215;
+  for (let i = 0; i < 2600; i++) G.tick(s, 0.05, { dx: 0, dy: 0 });
+  expect(f.timer).toBeGreaterThanOrEqual(0);
+  expect(G.restore(G.serialize(s))).toEqual(s);
+});
+
+it("pursuers navigate around a pillar instead of remaining stuck", () => {
+  const s = G.newGame(8);
+  G.enter(s);
+  s.rooms[0].foes = s.rooms[0].foes.slice(0, 1);
+  const f = s.rooms[0].foes[0];
+  s.x = 300;
+  s.y = 215;
+  f.x = 430;
+  f.y = 215;
+  s.invulnerable = 1000;
+  for (let i = 0; i < 300; i++) G.tick(s, 0.05, { dx: 0, dy: 0 });
+  expect(Math.hypot(f.x - s.x, f.y - s.y)).toBeLessThan(100);
 });
