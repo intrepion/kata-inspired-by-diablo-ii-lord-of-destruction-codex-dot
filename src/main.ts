@@ -1,6 +1,14 @@
 import "./style.css";
 import * as G from "./game";
 import { draw } from "./render";
+import { FieldInput } from "./field-input";
+import {
+  cameraAt,
+  canvasPoint,
+  groundAt,
+  groundDirection,
+  pickFoe,
+} from "./projection";
 import { sound, setSound } from "./audio";
 const SAVE = "cinderwake-v1";
 let state = G.newGame();
@@ -21,10 +29,8 @@ try {
 }
 let modal = "",
   paused = false,
-  soundOn = true,
-  target: { x: number; y: number } | undefined,
-  enemyTarget: number | undefined,
-  heldAttack = false;
+  soundOn = true;
+const command = new FieldInput();
 const keys = new Set<string>();
 const movePointers = new Map<number, string>();
 let attackPointer: number | undefined;
@@ -37,7 +43,7 @@ let hudClock = 0,
   lastSave = 0,
   lastHp = state.hp;
 const app = document.querySelector<HTMLDivElement>("#app")!;
-app.innerHTML = `<div class="shell"><header class="masthead"><div class="brand"><div class="sigil"></div><div><h1>CINDERWAKE</h1><p class="subtitle">THE HOLLOW CROWN</p></div></div><div class="top-actions"><span class="save-status" id="save-status"></span><button class="quiet" id="sound" aria-label="Toggle synthesized sound">Sound off</button><button class="quiet" id="help">Guide</button><button class="quiet" id="pause">Pause</button></div></header><section class="chapter"><div><p class="eyebrow" id="chapter-kicker"></p><h2 id="chapter-title"></h2><p id="chapter-desc"></p></div><div class="embers" id="embers"></div></section><div class="layout"><main><div class="stage"><canvas width="960" height="600" id="world" aria-label="Dungeon. Click or tap to move; click a foe to approach and attack." tabindex="0"></canvas><div class="stage-label" id="stage-label"></div><div class="boss-bar" id="boss"></div><div class="stage-note" id="stage-note"></div><div class="overlay" id="overlay"></div></div><div class="controls"><button class="ability" id="strike"><kbd>SPACE</kbd><span><strong>Strike</strong><small>Hold to cleave</small></span></button><button class="ability" id="nova"><kbd>Q</kbd><span><strong>Ember nova</strong><small id="nova-status"></small></span></button><button class="ability" id="dash"><kbd>E</kbd><span><strong>Veilstep</strong><small id="dash-status"></small></span></button><button class="ability" id="flask"><kbd>H</kbd><span><strong>Heal</strong><small id="flask-status"></small></span></button><button class="ability" id="relics"><kbd>I</kbd><span><strong>Relics</strong><small id="pack-status"></small></span></button></div><div class="mobile-move" aria-label="Directional movement"><button data-move="ArrowLeft" aria-label="Move left">←</button><button data-move="ArrowUp" aria-label="Move up">↑</button><button data-move="ArrowDown" aria-label="Move down">↓</button><button data-move="ArrowRight" aria-label="Move right">→</button></div><div class="objective"><p id="objective"></p><button id="interact">Gather [F]</button><button class="quiet" id="recall">Recall [R]</button></div><p class="hint">WASD / arrows to move · Click a foe to pursue & strike · Q nova · E evade · H heal<br>Gather nearby relics · I pack · K disciplines · Esc pauses · Menus pause combat</p></main><aside class="sidebar"><section class="panel"><div class="portrait-row"><div class="portrait"></div><div><h3>Iona</h3><small id="keeper-title"></small></div></div><div class="bar-label"><span>VITALITY</span><span id="hp-value"></span></div><div class="bar"><div class="health" id="hp-bar"></div></div><div class="bar-label"><span>CINDER</span><span id="mana-value"></span></div><div class="bar"><div class="mana" id="mana-bar"></div></div><div class="bar-label"><span>EXPERIENCE</span><span id="xp-value"></span></div><div class="bar"><div class="xp" id="xp-bar"></div></div><div class="stats"><div class="stat" id="attack-stat"></div><div class="stat" id="armor-stat"></div><div class="stat" id="gold-stat"></div><div class="stat" id="level-stat"></div></div><button id="skills" style="width:100%;margin-top:18px">Disciplines</button></section><section class="panel"><p class="panel-title">BOUND RELICS</p><div id="gear"></div><button class="quiet" id="manage" style="width:100%;font-size:11px">Open relic pack</button></section><section class="panel journal"><p class="panel-title">THE LANTERN REMEMBERS</p><div id="journal"></div></section></aside></div><footer class="footer"><span>AN ORIGINAL TALE OF ASH, OATHS & STOLEN LIGHT</span><span>LOCAL ADVENTURE · CYCLE <span id="cycle"></span></span></footer></div><div class="modal-layer" id="modal" role="dialog" aria-modal="true" aria-label="Game menu"></div>`;
+app.innerHTML = `<div class="shell"><header class="masthead"><div class="brand"><div class="sigil"></div><div><h1>CINDERWAKE</h1><p class="subtitle">THE HOLLOW CROWN</p></div></div><div class="top-actions"><span class="save-status" id="save-status"></span><button class="quiet" id="sound" aria-label="Toggle synthesized sound">Sound off</button><button class="quiet" id="help">Guide</button><button class="quiet" id="pause">Pause</button></div></header><section class="chapter"><div><p class="eyebrow" id="chapter-kicker"></p><h2 id="chapter-title"></h2><p id="chapter-desc"></p></div><div class="embers" id="embers"></div></section><div class="layout"><main><div class="stage"><canvas width="960" height="600" id="world" aria-label="Dungeon. Click or tap to move; click a foe to approach and attack." tabindex="0"></canvas><div class="stage-label" id="stage-label"></div><div class="boss-bar" id="boss"></div><div class="stage-note" id="stage-note"></div><div class="overlay" id="overlay"></div></div><div class="controls"><button class="ability" id="strike"><kbd>SPACE</kbd><span><strong>Strike</strong><small>Hold to cleave</small></span></button><button class="ability" id="nova"><kbd>Q</kbd><span><strong>Ember nova</strong><small id="nova-status"></small></span></button><button class="ability" id="dash"><kbd>E</kbd><span><strong>Veilstep</strong><small id="dash-status"></small></span></button><button class="ability" id="flask"><kbd>H</kbd><span><strong>Heal</strong><small id="flask-status"></small></span></button><button class="ability" id="relics"><kbd>I</kbd><span><strong>Relics</strong><small id="pack-status"></small></span></button></div><div class="mobile-move" aria-label="Directional movement"><button data-move="ArrowLeft" aria-label="Move left">←</button><button data-move="ArrowUp" aria-label="Move up">↑</button><button data-move="ArrowDown" aria-label="Move down">↓</button><button data-move="ArrowRight" aria-label="Move right">→</button></div><div class="objective"><p id="objective"></p><button id="interact">Gather [F]</button><button class="quiet" id="recall">Recall [R]</button></div><p class="hint">Isometric view follows you · WASD / arrows move in view · Click a foe to pursue & strike · Q nova · E evade · H heal<br>Gather nearby relics · I pack · K disciplines · Esc pauses · Menus pause combat</p></main><aside class="sidebar"><section class="panel"><div class="portrait-row"><div class="portrait"></div><div><h3>Iona</h3><small id="keeper-title"></small></div></div><div class="bar-label"><span>VITALITY</span><span id="hp-value"></span></div><div class="bar"><div class="health" id="hp-bar"></div></div><div class="bar-label"><span>CINDER</span><span id="mana-value"></span></div><div class="bar"><div class="mana" id="mana-bar"></div></div><div class="bar-label"><span>EXPERIENCE</span><span id="xp-value"></span></div><div class="bar"><div class="xp" id="xp-bar"></div></div><div class="stats"><div class="stat" id="attack-stat"></div><div class="stat" id="armor-stat"></div><div class="stat" id="gold-stat"></div><div class="stat" id="level-stat"></div></div><button id="skills" style="width:100%;margin-top:18px">Disciplines</button></section><section class="panel"><p class="panel-title">BOUND RELICS</p><div id="gear"></div><button class="quiet" id="manage" style="width:100%;font-size:11px">Open relic pack</button></section><section class="panel journal"><p class="panel-title">THE LANTERN REMEMBERS</p><div id="journal"></div></section></aside></div><footer class="footer"><span>AN ORIGINAL TALE OF ASH, OATHS & STOLEN LIGHT</span><span>LOCAL ADVENTURE · CYCLE <span id="cycle"></span></span></footer></div><div class="modal-layer" id="modal" role="dialog" aria-modal="true" aria-label="Game menu"></div>`;
 const $ = <T extends HTMLElement = HTMLElement>(id: string) =>
   document.getElementById(id) as T;
 const canvas = $<HTMLCanvasElement>("world");
@@ -65,9 +71,7 @@ function resetInput() {
   keys.clear();
   movePointers.clear();
   attackPointer = undefined;
-  target = undefined;
-  enemyTarget = undefined;
-  heldAttack = false;
+  command.clear();
 }
 function change(fn: () => unknown) {
   fn();
@@ -79,7 +83,7 @@ function change(fn: () => unknown) {
 function action(kind: string) {
   if (modal || paused) return;
   if (kind === "strike") {
-    if (G.strike(state)) sound("strike");
+    if (G.strike(state, command.enemyTarget)) sound("strike");
   }
   if (kind === "nova") {
     if (G.nova(state)) sound("nova");
@@ -91,10 +95,19 @@ function action(kind: string) {
       dy =
         (pressed("s") || pressed("arrowdown") ? 1 : 0) -
         (pressed("w") || pressed("arrowup") ? 1 : 0);
+    const direction = groundDirection(dx, dy);
     G.dash(
       state,
-      dx || (!dy ? (target ? target.x - state.x : 1) : 0),
-      dy || (target ? target.y - state.y : 0),
+      dx || dy
+        ? direction.x
+        : command.target
+          ? command.target.x - state.x
+          : Math.SQRT1_2,
+      dx || dy
+        ? direction.y
+        : command.target
+          ? command.target.y - state.y
+          : -Math.SQRT1_2,
     );
   }
   if (kind === "flask") G.flask(state);
@@ -135,7 +148,7 @@ function renderModal() {
   if (modal === "skills")
     content = `<p>${state.points} unspent points. Each level grants one point. Every discipline has five ranks; choose a build that suits your next encounter.</p>${(["edge", "cinder", "resolve"] as const).map((k) => `<div class="discipline"><div><h3>${{ edge: "Oath of the Edge", cinder: "Heart of Cinder", resolve: "Keeper’s Resolve" }[k]} · ${state.ranks[k]}/5</h3><p>${{ edge: "+6 strike damage per rank. A relentless blade.", cinder: "+14 nova damage and faster cinder recovery per rank.", resolve: "+18 maximum vitality, armor, and movement speed per rank." }[k]}</p></div><button data-learn="${k}" ${state.points < 1 || state.ranks[k] >= 5 || state.mode === "dead" ? "disabled" : ""}>Learn</button></div>`).join("")}`;
   if (modal === "help")
-    content = `<p><b>Your oath</b> — Recover the three stolen embers. Clear each chamber and use the eastern gate. Defeat the Hollow King, then return the light to Vesper.</p><p><b>Fight</b> — Move with WASD/arrows or click/tap the floor. Click a foe to pursue and automatically strike within blade range. Hold Space or Strike for melee. Q casts a wide nova (25 cinder). E performs an invulnerable Veilstep toward your movement or click destination. H drinks a flask.</p><p><b>Read the threat</b> — Rust circles mark a locked attack location. Step out before the attack lands. Wraiths pursue, stone brutes swing slowly, and ink scribes cast at range. The Bellkeeper rings around itself; the Matron spreads mire; the King calls overlapping judgement circles.</p><p><b>Prepare</b> — Nearby relics gather automatically if there is pack space. I opens equipment. K opens disciplines. R recalls to the sanctuary and refills health, cinder, and three flasks. Progress stays in the chamber. Death costs 20% gold; relics and experience remain.</p><p><b>Saving</b> — Whole-session autosave every two seconds and after commands. Your browser stores the save on this origin. Menus, focus loss, and hidden tabs freeze combat. No network or account is required.</p>`;
+    content = `<p><b>Your oath</b> — Recover the three stolen embers. Clear each chamber and use the eastern gate. Defeat the Hollow King, then return the light to Vesper.</p><p><b>Fight</b> — The isometric camera follows you. Move in the view with WASD/arrows or click/tap the floor. Click a foe’s upright body to select it, pursue and strike that foe within blade range. A selected foe is never replaced by a closer one. Click another foe or the floor to change commands. Hold Space or Strike for melee. Q casts a wide nova (25 cinder). E performs an invulnerable Veilstep toward your movement or click destination. H drinks a flask.</p><p><b>Read the threat</b> — Rust circles mark a locked attack location. Step out before the attack lands. Wraiths pursue, stone brutes swing slowly, and ink scribes cast at range. The Bellkeeper rings around itself; the Matron spreads mire; the King calls overlapping judgement circles.</p><p><b>Prepare</b> — Nearby relics gather automatically if there is pack space. I opens equipment. K opens disciplines. R recalls to the sanctuary and refills health, cinder, and three flasks. Progress stays in the chamber. Death costs 20% gold; relics and experience remain.</p><p><b>Saving</b> — Whole-session autosave every two seconds and after commands. Your browser stores the save on this origin. Menus, focus loss, and hidden tabs freeze combat. No network or account is required.</p>`;
   if (modal === "pause")
     content = `<p>The lantern holds its breath. Your adventure is paused.</p><div class="buttons"><button id="manual-save">Save now</button><button class="quiet" id="reset-confirm">New keeper…</button></div><p class="notice">${storageAvailable ? "Saved on this browser only." : html(saveMessage)}</p>`;
   if (modal === "reset")
@@ -323,16 +336,14 @@ for (const kind of ["strike", "nova", "dash", "flask", "interact", "recall"])
 $("strike").addEventListener("pointerdown", (e) => {
   if (state.mode !== "field" || modal) return;
   e.preventDefault();
-  heldAttack = true;
+  command.beginStrike();
   attackPointer = e.pointerId;
   $("strike").setPointerCapture(e.pointerId);
-  target = undefined;
-  enemyTarget = undefined;
   action("strike");
 });
 window.addEventListener("pointerup", (e) => {
   if (e.pointerId === attackPointer) {
-    heldAttack = false;
+    command.releaseStrike();
     attackPointer = undefined;
   }
   movePointers.delete(e.pointerId);
@@ -343,22 +354,22 @@ for (const b of document.querySelectorAll<HTMLButtonElement>("[data-move]")) {
     e.preventDefault();
     movePointers.set(e.pointerId, b.dataset.move!.toLowerCase());
     b.setPointerCapture(e.pointerId);
-    target = undefined;
-    enemyTarget = undefined;
+    command.moveTo();
   };
   b.onpointerup = (e) => movePointers.delete(e.pointerId);
   b.onpointercancel = resetInput;
 }
 canvas.addEventListener("pointerdown", (e) => {
-  if (state.mode !== "field" || modal) return;
+  if (state.mode !== "field" || modal || paused || e.button !== 0) return;
+  e.preventDefault();
   const rect = canvas.getBoundingClientRect();
-  target = {
-    x: ((e.clientX - rect.left) / rect.width) * G.WIDTH,
-    y: ((e.clientY - rect.top) / rect.height) * G.HEIGHT,
-  };
-  enemyTarget = state.rooms[state.room].foes.find(
-    (f) => f.hp > 0 && Math.hypot(f.x - target!.x, f.y - target!.y) < 40,
-  )?.id;
+  const camera = cameraAt(state, G.WIDTH, G.HEIGHT);
+  const point = canvasPoint({ x: e.clientX, y: e.clientY }, rect, camera);
+  if (!point) return;
+  const selected = pickFoe(point, camera, state.rooms[state.room].foes);
+  const ground = groundAt(point, camera);
+  if (selected !== undefined) command.chooseFoe(selected);
+  else command.moveTo(G.walkable(ground.x, ground.y) ? ground : undefined);
   canvas.focus({ preventScroll: true });
   sound("click");
 });
@@ -409,8 +420,7 @@ window.addEventListener("keydown", (e) => {
       "arrowright",
     ].includes(key)
   ) {
-    target = undefined;
-    enemyTarget = undefined;
+    command.moveTo();
   }
   if (!e.repeat) {
     const command: Record<string, string> = {
@@ -448,30 +458,35 @@ function frame(now: number) {
   const dt = Math.min((now - previous) / 1000, 0.05);
   previous = now;
   if (!modal && !paused && !document.hidden) {
-    if (enemyTarget) {
+    let selectedAlive = false;
+    if (command.enemyTarget) {
       const foe = state.rooms[state.room].foes.find(
-        (f) => f.id === enemyTarget && f.hp > 0,
+        (f) => f.id === command.enemyTarget && f.hp > 0,
       );
       if (foe) {
-        target =
+        selectedAlive = true;
+        command.target =
           Math.hypot(foe.x - state.x, foe.y - state.y) > 90
             ? { x: foe.x, y: foe.y }
             : undefined;
       } else {
-        enemyTarget = undefined;
-        target = undefined;
+        // Keep the spent target ID until a new command: held attacks cannot redirect after its death.
+        command.target = undefined;
       }
     }
     const oldCd = state.attackCd;
-    G.tick(state, dt, {
-      dx:
-        (pressed("d") || pressed("arrowright") ? 1 : 0) -
+    const direction = groundDirection(
+      (pressed("d") || pressed("arrowright") ? 1 : 0) -
         (pressed("a") || pressed("arrowleft") ? 1 : 0),
-      dy:
-        (pressed("s") || pressed("arrowdown") ? 1 : 0) -
+      (pressed("s") || pressed("arrowdown") ? 1 : 0) -
         (pressed("w") || pressed("arrowup") ? 1 : 0),
-      target,
-      attack: pressed(" ") || heldAttack || !!enemyTarget,
+    );
+    G.tick(state, dt, {
+      dx: direction.x,
+      dy: direction.y,
+      target: command.target,
+      attack: pressed(" ") || command.heldAttack || selectedAlive,
+      attackTarget: command.enemyTarget,
     });
     if (oldCd <= 0 && state.attackCd > 0) sound("strike");
     if (state.mode === "field" && state.pack.length < 12 && G.collect(state))
@@ -479,7 +494,10 @@ function frame(now: number) {
     if (state.hp < lastHp) sound("hurt");
     lastHp = state.hp;
   }
-  draw(canvas, state, now);
+  draw(canvas, state, now, {
+    target: command.target,
+    enemyTarget: command.enemyTarget,
+  });
   if (now - hudClock > 100) {
     refresh();
     hudClock = now;

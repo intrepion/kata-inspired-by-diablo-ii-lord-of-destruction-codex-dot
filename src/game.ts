@@ -69,6 +69,7 @@ export type Input = {
   dy: number;
   target?: { x: number; y: number };
   attack?: boolean;
+  attackTarget?: number;
 };
 export const WIDTH = 960,
   HEIGHT = 600;
@@ -403,7 +404,7 @@ function damage(s: State, f: Foe, amount: number) {
     log(s, "Chamber cleared. Gather relics, then take the eastern gate.");
   }
 }
-export function strike(s: State) {
+export function strike(s: State, targetId?: number) {
   if (s.mode !== "field" || s.attackCd > 0) return false;
   const foes = s.rooms[s.room].foes
     .filter((f) => f.hp > 0)
@@ -411,7 +412,9 @@ export function strike(s: State) {
       (a, b) =>
         Math.hypot(a.x - s.x, a.y - s.y) - Math.hypot(b.x - s.x, b.y - s.y),
     );
-  const f = foes[0];
+  // An explicit mouse target must never silently redirect to a closer foe.
+  const f =
+    targetId === undefined ? foes[0] : foes.find((foe) => foe.id === targetId);
   if (
     !f ||
     Math.hypot(f.x - s.x, f.y - s.y) > 125 ||
@@ -479,7 +482,7 @@ export function tick(s: State, dt: number, input: Input) {
       direction.dy * stats(s).speed * dt,
     );
   }
-  if (input.attack) strike(s);
+  if (input.attack) strike(s, input.attackTarget);
   const room = s.rooms[s.room];
   const cell = Math.floor(s.x / 80) + Math.floor(s.y / 75) * 12;
   if (!room.seen.includes(cell)) room.seen.push(cell);

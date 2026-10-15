@@ -1,254 +1,330 @@
-import { State, Foe, WIDTH, HEIGHT, PILLARS, DISTRICTS } from "./game";
-export function draw(canvas: HTMLCanvasElement, s: State, clock: number) {
+import { State, WIDTH, HEIGHT, PILLARS } from "./game";
+import type { Foe } from "./game";
+import { cameraAt, project, SPRITE_SCALE, type Point } from "./projection";
+
+export type FieldCommand = { target?: Point; enemyTarget?: number };
+export function draw(
+  canvas: HTMLCanvasElement,
+  s: State,
+  clock: number,
+  command: FieldCommand = {},
+) {
   const c = canvas.getContext("2d")!;
-  c.clearRect(0, 0, WIDTH, HEIGHT);
-  const zone = Math.floor(s.room / 2),
-    town = s.mode === "town",
+  const town = s.mode === "town",
+    zone = Math.floor(s.room / 2),
     t = clock / 1000;
-  const tone = town ? "#263331" : ["#302a24", "#1d3434", "#282535"][zone];
+  const camera = cameraAt(town ? { x: 480, y: 300 } : s, WIDTH, HEIGHT);
+  const room = s.rooms[s.room];
+  c.clearRect(0, 0, WIDTH, HEIGHT);
   c.fillStyle = "#080e11";
   c.fillRect(0, 0, WIDTH, HEIGHT);
-  // Uneven slabs, hand-engraved diamond seams, and carved perimeter.
-  c.fillStyle = tone;
-  c.fillRect(46, 50, 868, 500);
-  for (let y = 60; y < 550; y += 42)
-    for (let x = 50; x < 915; x += 64) {
-      const h = (Math.sin(x * 8 + y * 37) * 10000) % 1;
-      c.fillStyle = h > 0.3 ? "#ffffff07" : "#00000018";
-      c.fillRect(x + 2 + (y % 84 ? 16 : 0), y + 2, 60, 38);
-      c.strokeStyle = "#00000040";
-      c.strokeRect(x + (y % 84 ? 16 : 0), y, 64, 42);
-    }
-  c.strokeStyle = "#8b806249";
-  c.lineWidth = 2;
-  c.strokeRect(63, 72, 834, 456);
-  c.strokeRect(78, 86, 804, 428);
-  c.strokeStyle = "#b59b6a22";
-  c.beginPath();
-  c.ellipse(480, 300, 140, 130, 0, 0, Math.PI * 2);
-  c.ellipse(480, 300, 116, 108, 0, 0, Math.PI * 2);
-  c.stroke();
-  for (let i = 0; i < 12; i++) {
-    const a = (i * Math.PI) / 6;
+  const tone = town ? "#263331" : ["#302a24", "#1d3434", "#282535"][zone];
+  const polygon = (
+    points: Point[],
+    color: string,
+    stroke?: string,
+    elevation = 0,
+  ) => {
     c.beginPath();
-    c.moveTo(480 + 122 * Math.cos(a), 300 + 112 * Math.sin(a));
-    c.lineTo(480 + 133 * Math.cos(a), 300 + 123 * Math.sin(a));
-    c.stroke();
-  }
-  // Gothic buttresses and the upper colonnade.
-  for (let x = 42; x < 945; x += 96) {
-    c.fillStyle = "#101719";
-    c.fillRect(x, 13, 38, 57);
-    c.fillStyle = "#3e4440";
-    c.fillRect(x + 3, 16, 32, 42);
-    c.fillStyle = "#56564a";
-    c.fillRect(x, 12, 38, 7);
-    c.fillStyle = "#080d0f";
-    c.beginPath();
-    c.moveTo(x + 11, 53);
-    c.lineTo(x + 11, 34);
-    c.quadraticCurveTo(x + 19, 20, x + 27, 34);
-    c.lineTo(x + 27, 53);
-    c.fill();
-  }
-  c.fillStyle = "#141b1b";
-  c.fillRect(27, 66, 23, 480);
-  c.fillRect(910, 66, 23, 480);
-  c.fillRect(43, 547, 874, 22);
-  c.fillStyle = "#605c493e";
-  c.fillRect(27, 66, 7, 481);
-  c.fillRect(910, 66, 7, 481);
-  c.fillRect(43, 547, 874, 4);
-  for (const p of PILLARS) {
-    c.fillStyle = "#0007";
-    c.beginPath();
-    c.ellipse(p.x + p.w / 2 + 10, p.y + p.h + 7, 52, 23, 0, 0, Math.PI * 2);
-    c.fill();
-    c.fillStyle = "#182121";
-    c.fillRect(p.x, p.y, p.w, p.h);
-    c.fillStyle = "#444943";
-    c.fillRect(p.x + 3, p.y - 20, p.w - 6, p.h + 10);
-    c.fillStyle = "#646658";
-    c.fillRect(p.x - 4, p.y - 23, p.w + 8, 9);
-    c.fillStyle = "#313a35";
-    c.fillRect(p.x + 11, p.y - 10, p.w - 22, p.h - 15);
-    c.fillStyle = "#8d86692a";
-    c.fillRect(p.x + 12, p.y - 10, 4, p.h - 15);
-    c.fillStyle = "#626457";
-    c.fillRect(p.x - 4, p.y + p.h - 12, p.w + 8, 12);
-  }
-  const light = (x: number, y: number, color: string, r: number) => {
-    const g = c.createRadialGradient(x, y, 0, x, y, r);
-    g.addColorStop(0, color);
-    g.addColorStop(1, "#00000000");
-    c.fillStyle = g;
-    c.fillRect(x - r, y - r, r * 2, r * 2);
-  };
-  for (const [x, y] of [
-    [100, 104],
-    [850, 104],
-    [100, 491],
-    [850, 491],
-  ]) {
-    light(x, y, "#d59c3433", 100);
-    c.fillStyle = "#28261e";
-    c.fillRect(x - 5, y, 10, 18);
-    c.fillStyle = "#e8b963";
-    c.beginPath();
-    c.moveTo(x - 5, y);
-    c.quadraticCurveTo(x - 9, y - 10, x + Math.sin(t * 5 + x) * 3, y - 21);
-    c.quadraticCurveTo(x + 9, y - 8, x + 5, y);
-    c.fill();
-  }
-  if (town) {
-    light(480, 280, "#dbb76a30", 240);
-    c.strokeStyle = "#c4a163";
-    c.lineWidth = 3;
-    c.beginPath();
-    c.moveTo(435, 300);
-    c.lineTo(480, 205);
-    c.lineTo(525, 300);
+    points.forEach((point, index) => {
+      const p = project(point, camera, elevation);
+      if (index) c.lineTo(p.x, p.y);
+      else c.moveTo(p.x, p.y);
+    });
     c.closePath();
-    c.stroke();
-    c.fillStyle = "#252a24";
-    c.fillRect(434, 305, 94, 29);
-    c.fillStyle = "#b6a480";
-    c.fillRect(425, 301, 110, 9);
-    c.fillStyle = "#e9c779";
-    c.beginPath();
-    c.arc(480, 266, 12 + Math.sin(t) * 2, 0, 7);
+    c.fillStyle = color;
     c.fill();
-    keeper(c, 580, 350, t, s);
-    c.font = "14px Georgia";
-    c.fillStyle = "#c4ae81";
-    c.textAlign = "center";
-    c.fillText("THE LAST LIGHT", 480, 382);
-    for (let i = 0; i < 24; i++) {
-      const x = 280 + i * 19,
-        y = 260 + Math.sin(t * 0.6 + i) * 80;
-      light(x, y, "#d4af6816", 12);
-    }
-    return;
-  }
-  const room = s.rooms[s.room];
-  // Gate clearly changes when the room is won.
-  c.fillStyle = room.cleared ? "#66a597" : "#302c29";
-  c.fillRect(889, 266, 24, 74);
-  light(893, 303, room.cleared ? "#88efd350" : "#ac664b18", 100);
-  c.strokeStyle = room.cleared ? "#a7e5c6" : "#635546";
-  c.lineWidth = 3;
-  c.beginPath();
-  c.moveTo(881, 343);
-  c.lineTo(881, 284);
-  c.quadraticCurveTo(899, 244, 917, 284);
-  c.lineTo(917, 343);
-  c.stroke();
-  for (const d of room.dangers) {
-    c.strokeStyle = "#ff725d";
-    c.fillStyle = "#ff513329";
-    c.lineWidth = 2;
-    c.beginPath();
-    c.arc(d.x, d.y, d.radius, 0, 7);
-    c.fill();
-    c.stroke();
-    c.beginPath();
-    c.arc(d.x, d.y, d.radius * 0.65, 0, 7);
-    c.stroke();
-  }
-  for (const f of room.foes) {
-    if (f.hp <= 0) {
-      c.fillStyle = "#822d282e";
-      c.beginPath();
-      c.ellipse(f.x, f.y, 24, 10, 0, 0, 7);
-      c.fill();
-      continue;
-    }
-    if (f.windup > 0) {
-      const r =
-        f.kind === "bell"
-          ? 135
-          : f.kind === "mire"
-            ? 95
-            : f.kind === "king"
-              ? 115
-              : f.kind === "brute"
-                ? 75
-                : f.kind === "scribe"
-                  ? 48
-                  : 46;
-      c.fillStyle = "#ff664426";
-      c.strokeStyle = "#ed8464";
-      c.lineWidth = 2;
-      c.beginPath();
-      c.arc(f.tx, f.ty, r, 0, 7);
-      c.fill();
+    if (stroke) {
+      c.strokeStyle = stroke;
+      c.lineWidth = 1;
       c.stroke();
     }
-    foe(c, f, t, zone);
-  }
-  for (const d of room.drops) {
-    const color = ["#c9b88c", "#75c7b6", "#edbd5e"][d.relic.rarity];
-    light(d.x, d.y, color + "30", 40);
-    c.strokeStyle = color;
-    c.lineWidth = 2;
-    c.beginPath();
-    c.moveTo(d.x, d.y - 15);
-    c.lineTo(d.x + 8, d.y - 3);
-    c.lineTo(d.x, d.y + 8);
-    c.lineTo(d.x - 8, d.y - 3);
-    c.closePath();
-    c.stroke();
-    c.fillStyle = color;
-    c.font = "10px sans-serif";
-    c.textAlign = "center";
-    c.fillText(d.relic.slot.toUpperCase(), d.x, d.y + 22);
-  }
-  light(s.x, s.y, "#e5bb6930", 230);
-  keeper(c, s.x, s.y, t, s);
-  if (s.attackCd > 0.25) {
-    c.strokeStyle = "#f4dea1";
-    c.lineWidth = 5;
-    c.beginPath();
-    c.arc(s.x, s.y - 15, 64, -1.7, 1.5);
-    c.stroke();
-  }
-  if (s.novaCd > 3.2) {
-    c.strokeStyle = "#efa968";
-    c.lineWidth = 3;
-    c.beginPath();
-    c.arc(s.x, s.y, (245 * (3.8 - s.novaCd)) / 0.6, 0, 7);
-    c.stroke();
-  }
-  // Exploration veil only obscures the undiscovered outer reaches; combat stays readable.
-  for (let cy = 1; cy < 7; cy++)
-    for (let cx = 1; cx < 11; cx++) {
-      const distance = Math.hypot(cx * 80 + 40 - s.x, cy * 75 + 37 - s.y);
-      if (distance > 330 && !room.seen.includes(cx + cy * 12)) {
-        c.fillStyle = "#060b1070";
-        c.fillRect(cx * 80, cy * 75, 80, 75);
-      }
+  };
+  const rectangle = (x: number, y: number, width: number, depth: number) => [
+    { x, y },
+    { x: x + width, y },
+    { x: x + width, y: y + depth },
+    { x, y: y + depth },
+  ];
+  const stone = (
+    x: number,
+    y: number,
+    width: number,
+    depth: number,
+    height: number,
+    top: string,
+    side = "#222d2c",
+    bottom = 0,
+  ) => {
+    const points = rectangle(x, y, width, depth),
+      foot = points.map((p) => project(p, camera, bottom));
+    for (const [a, b] of [
+      [1, 2],
+      [2, 3],
+    ]) {
+      c.beginPath();
+      c.moveTo(foot[a].x, foot[a].y);
+      c.lineTo(foot[b].x, foot[b].y);
+      c.lineTo(foot[b].x, foot[b].y - height);
+      c.lineTo(foot[a].x, foot[a].y - height);
+      c.closePath();
+      c.fillStyle = a === 1 ? side : "#34413b";
+      c.fill();
+      c.strokeStyle = "#0b131ba0";
+      c.stroke();
     }
-  for (let i = 0; i < 35; i++) {
-    const x = (i * 137 + t * 8) % 960,
-      y = (i * 79 + Math.sin(t + i) * 15) % 600;
-    c.fillStyle = DISTRICTS[zone].color + "38";
-    c.fillRect(x, y, 1.5, 1.5);
+    polygon(points, top, "#a99c5e60", height + bottom);
+  };
+  const circle = (
+    point: Point,
+    radius: number,
+    fill: string,
+    stroke: string,
+    line = 2,
+  ) => {
+    const points = Array.from({ length: 40 }, (_, i) => ({
+      x: point.x + Math.cos((i / 40) * Math.PI * 2) * radius,
+      y: point.y + Math.sin((i / 40) * Math.PI * 2) * radius,
+    }));
+    polygon(points, fill);
+    c.strokeStyle = stroke;
+    c.lineWidth = line;
+    c.stroke();
+  };
+  polygon(rectangle(46, 50, 868, 500), tone, "#9e926b");
+  for (let y = 72; y < 528; y += 57)
+    for (let x = 64; x < 896; x += 64) {
+      const surveyed =
+        town ||
+        Math.hypot(x + 32 - s.x, y + 28 - s.y) < 330 ||
+        room.seen.includes(
+          Math.floor((x + 32) / 80) + Math.floor((y + 28) / 75) * 12,
+        );
+      polygon(
+        rectangle(x + 1, y + 1, Math.min(62, 895 - x), 55),
+        surveyed
+          ? Math.sin(x * 8 + y * 37) > 0
+            ? "#ffffff07"
+            : "#00000015"
+          : "#030a0e95",
+        "#0b131b60",
+      );
+    }
+  // The camera crops the actual world: pillars, actors and exits retain their world positions.
+  circle({ x: 480, y: 300 }, 120, "#00000000", "#b59b6a25", 1);
+  if (!town) {
+    for (const danger of room.dangers)
+      circle(danger, danger.radius, "#ff513329", "#ff725d");
+    for (const f of room.foes)
+      if (f.hp > 0 && f.windup > 0) {
+        const radius =
+          f.kind === "bell"
+            ? 135
+            : f.kind === "mire"
+              ? 95
+              : f.kind === "king"
+                ? 115
+                : f.kind === "brute"
+                  ? 75
+                  : f.kind === "scribe"
+                    ? 48
+                    : 46;
+        circle({ x: f.tx, y: f.ty }, radius, "#ff664426", "#ed8464");
+      }
+    for (const f of room.foes)
+      if (f.hp <= 0) circle(f, 20, "#822d2838", "#00000000");
+    if (command.target && !command.enemyTarget)
+      circle(command.target, 12, "#eac88215", "#eac882");
+    const selected = room.foes.find(
+      (f) => f.id === command.enemyTarget && f.hp > 0,
+    );
+    if (selected) circle(selected, 26, "#ffb87915", "#f0c18d");
+    circle(s, 24, "#efd8a70b", "#c0cdb36b", 1);
+    if (s.novaCd > 3.2)
+      circle(s, (245 * (3.8 - s.novaCd)) / 0.6, "#00000000", "#efa968", 3);
   }
-  // Small surveyed map.
-  c.fillStyle = "#071011ce";
-  c.fillRect(785, 77, 100, 70);
-  c.strokeStyle = "#a08f5740";
-  c.strokeRect(785, 77, 100, 70);
-  for (const n of room.seen) {
-    c.fillStyle = "#4b665855";
-    c.fillRect(785 + (n % 12) * 8.3, 77 + Math.floor(n / 12) * 8.75, 8, 8);
+  const objects: { depth: number; draw: () => void }[] = [];
+  for (const p of PILLARS)
+    objects.push({
+      depth: p.x + p.w + p.y + p.h,
+      draw: () => {
+        stone(p.x - 4, p.y - 4, p.w + 8, p.h + 8, 10, "#626457");
+        stone(p.x + 5, p.y + 6, p.w - 10, p.h - 12, 98, "#4a5144", "#202b28");
+        stone(p.x - 4, p.y - 4, p.w + 8, p.h + 8, 10, "#727365", "#50574a", 98);
+      },
+    });
+  for (let x = 46; x < 914; x += 96)
+    objects.push({
+      depth: x + 50,
+      draw: () => stone(x, 45, 35, 14, 63, "#4d5548"),
+    });
+  objects.push({
+    depth: 46 + 530,
+    draw: () => stone(39, 50, 12, 500, 25, "#535947"),
+  });
+  objects.push({
+    depth: 914 + 550,
+    draw: () => stone(910, 50, 12, 500, 20, "#535947"),
+  });
+  if (!town) {
+    objects.push({
+      depth: 910 + 340,
+      draw: () => {
+        stone(889, 266, 24, 74, 68, room.cleared ? "#86c6ac" : "#6a5745");
+        const p = project({ x: 900, y: 300 }, camera, 90);
+        c.fillStyle = room.cleared ? "#b5efc8" : "#caae82";
+        c.font = "11px Georgia";
+        c.textAlign = "center";
+        c.fillText(room.cleared ? "EASTERN GATE · F" : "GATE SEALED", p.x, p.y);
+      },
+    });
+    for (const drop of room.drops)
+      objects.push({
+        depth: drop.x + drop.y,
+        draw: () => {
+          const p = project(drop, camera),
+            color = ["#c9b88c", "#75c7b6", "#edbd5e"][drop.relic.rarity];
+          c.strokeStyle = color;
+          c.fillStyle = "#152321d9";
+          c.lineWidth = 2;
+          c.beginPath();
+          c.moveTo(p.x, p.y - 20);
+          c.lineTo(p.x + 9, p.y - 6);
+          c.lineTo(p.x, p.y + 5);
+          c.lineTo(p.x - 9, p.y - 6);
+          c.closePath();
+          c.fill();
+          c.stroke();
+          c.fillStyle = color;
+          c.font = "10px sans-serif";
+          c.textAlign = "center";
+          c.fillText(drop.relic.slot.toUpperCase(), p.x, p.y + 20);
+        },
+      });
+    for (const f of room.foes)
+      if (f.hp > 0)
+        objects.push({
+          depth: f.x + f.y,
+          draw: () => {
+            const p = project(f, camera);
+            c.save();
+            c.translate(p.x, p.y);
+            c.scale(SPRITE_SCALE, SPRITE_SCALE);
+            foe(c, { ...f, x: 0, y: 0 }, t, zone);
+            c.restore();
+            if (f.id === command.enemyTarget) {
+              c.fillStyle = "#f2d2a0";
+              c.font = "12px Georgia";
+              c.textAlign = "center";
+              c.fillText(
+                `${f.kind.toUpperCase()} · ${Math.ceil(f.hp)}/${f.maxHp}`,
+                p.x,
+                p.y -
+                  (f.kind === "brute"
+                    ? 100
+                    : ["bell", "mire", "king"].includes(f.kind)
+                      ? 125
+                      : 83),
+              );
+            }
+          },
+        });
+    objects.push({
+      depth: s.x + s.y,
+      draw: () => {
+        const p = project(s, camera);
+        c.save();
+        c.translate(p.x, p.y);
+        c.scale(SPRITE_SCALE, SPRITE_SCALE);
+        keeper(c, 0, 0, t, s);
+        c.restore();
+        if (s.attackCd > 0.25) {
+          c.strokeStyle = "#f4dea1";
+          c.lineWidth = 4;
+          c.beginPath();
+          c.arc(p.x, p.y - 20, 56, -1.7, 1.5);
+          c.stroke();
+        }
+      },
+    });
+  } else {
+    objects.push({
+      depth: 480 + 300,
+      draw: () => {
+        stone(440, 260, 80, 80, 35, "#8b845d");
+        const p = project({ x: 480, y: 300 }, camera, 95);
+        c.fillStyle = "#edcb7a";
+        c.beginPath();
+        c.arc(p.x, p.y, 15 + Math.sin(t), 0, Math.PI * 2);
+        c.fill();
+      },
+    });
+    objects.push({
+      depth: 580 + 350,
+      draw: () => {
+        const p = project({ x: 580, y: 350 }, camera);
+        c.save();
+        c.translate(p.x, p.y);
+        c.scale(SPRITE_SCALE, SPRITE_SCALE);
+        keeper(c, 0, 0, t, s);
+        c.restore();
+      },
+    });
   }
+  objects.sort((a, b) => a.depth - b.depth).forEach((object) => object.draw());
+  if (!town) survey(c, s);
+  const shade = c.createRadialGradient(
+    WIDTH / 2,
+    HEIGHT / 2,
+    190,
+    WIDTH / 2,
+    HEIGHT / 2,
+    640,
+  );
+  shade.addColorStop(0, "#02080800");
+  shade.addColorStop(1, "#020808b0");
+  c.fillStyle = shade;
+  c.fillRect(0, 0, WIDTH, HEIGHT);
+}
+function survey(c: CanvasRenderingContext2D, s: State) {
+  const x = 797,
+    y = 67,
+    w = 130,
+    h = 82,
+    room = s.rooms[s.room];
+  c.fillStyle = "#071011e8";
+  c.fillRect(x, y, w, h);
+  c.strokeStyle = "#a08f5770";
+  c.strokeRect(x, y, w, h);
+  for (const cell of room.seen) {
+    c.fillStyle = "#4b665880";
+    c.fillRect(
+      x + ((cell % 12) * w) / 12,
+      y + (Math.floor(cell / 12) * h) / 8,
+      w / 12,
+      h / 8,
+    );
+  }
+  for (const pillar of PILLARS) {
+    c.fillStyle = "#8b8960";
+    c.fillRect(
+      x + (pillar.x / WIDTH) * w,
+      y + (pillar.y / HEIGHT) * h,
+      (pillar.w / WIDTH) * w,
+      (pillar.h / HEIGHT) * h,
+    );
+  }
+  // The map marks the keeper, gate and explored ground; it does not expose hidden foes.
   c.fillStyle = "#efcf8f";
-  c.fillRect(785 + (s.x / WIDTH) * 100 - 2, 77 + (s.y / HEIGHT) * 70 - 2, 4, 4);
-  c.font = "8px sans-serif";
+  c.beginPath();
+  c.arc(x + (s.x / WIDTH) * w, y + (s.y / HEIGHT) * h, 3, 0, Math.PI * 2);
+  c.fill();
+  c.fillStyle = room.cleared ? "#95e8bd" : "#886d53";
+  c.fillRect(x + (900 / WIDTH) * w - 2, y + (300 / HEIGHT) * h - 3, 4, 6);
+  c.font = "9px sans-serif";
   c.fillStyle = "#a4b3a3";
   c.textAlign = "right";
-  c.fillText("SURVEY", 885, 157);
+  c.fillText("SURVEY · FOLLOWING FIELD", x + w, y + h + 13);
 }
 function keeper(
   c: CanvasRenderingContext2D,

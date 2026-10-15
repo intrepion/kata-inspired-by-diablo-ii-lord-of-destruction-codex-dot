@@ -8,3 +8,6 @@
 **Flask**: A consumable healing charge, replenished in the sanctuary.
 **Cycle**: A campaign traversal. Later cycles strengthen foes and rewards.
 **Discipline**: One of three permanent skill paths: Edge, Cinder, and Resolve.
+
+**Selected foe**: The foe named by the keeper’s current combat command; another foe does not replace it when it becomes unreachable or falls.
+**Ground command**: A destination on the chamber floor that the keeper approaches around stone.
