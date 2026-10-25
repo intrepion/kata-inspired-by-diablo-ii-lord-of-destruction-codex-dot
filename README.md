@@ -60,3 +60,7 @@ GitHub Actions runs the same gates. See [design spec](docs/spec.md), [glossary](
 The image below is historical browser evidence from before the isometric correction; it is not acceptance evidence for the current camera.
 
 ![Historical Chrome campaign ending](docs/screenshots/campaign-ending.jpg)
+
+## Play online
+
+[Play the hosted game](https://intrepion.github.io/kata-inspired-by-diablo-ii-lord-of-destruction-codex-dot/)
