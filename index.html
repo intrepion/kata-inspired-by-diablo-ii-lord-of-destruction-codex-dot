@@ -13,8 +13,13 @@
       rel="icon"
       href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath fill='%23d4a55e' d='M32 3 47 32 32 61 17 32z'/%3E%3C/svg%3E"
     />
-  </head>
+  <style>[data-kata-arcade-nav] a:focus-visible { outline: 3px solid #ffdf70 !important; outline-offset: 3px; }</style>
+</head>
   <body>
+    <div role="navigation" aria-label="Arcade navigation" data-kata-arcade-nav style="all:initial;display:block;position:relative;z-index:2147483647;font:600 13px/1.3 system-ui,sans-serif;">
+      <a href="https://intrepion.github.io/" style="display:inline-block;margin:8px;padding:8px 12px;border:2px solid #fff;border-radius:6px;background:#17262a;color:#fff;text-decoration:underline;text-underline-offset:3px;box-shadow:0 1px 4px #0008;">← Kata Arcade</a>
+    </div>
+
     <div id="app"></div>
     <script type="module" src="/src/main.ts"></script>
   </body>
