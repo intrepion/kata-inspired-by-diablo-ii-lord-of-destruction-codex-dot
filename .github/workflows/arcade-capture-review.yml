@@ -28,7 +28,7 @@ jobs:
         env:
           CAPTURE_OUTPUT: capture-output
         run: |
-          export GAME_SOURCE_COMMIT="$(git rev-parse HEAD^)"
+          export GAME_SOURCE_COMMIT="3f9bd3898c7c1985d5ea197c96690cafb916f701"
           python3 -m http.server 4266 --bind 127.0.0.1 --directory capture-site > /tmp/cinderwake-http.log 2>&1 &
           server_pid=$!
           trap 'kill "$server_pid"' EXIT
