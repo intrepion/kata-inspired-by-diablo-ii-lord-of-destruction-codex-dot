@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "gameId": "kata-inspired-by-diablo-ii-lord-of-destruction-codex-dot",
   "playUrl": "https://intrepion.github.io/kata-inspired-by-diablo-ii-lord-of-destruction-codex-dot/",
   "screenshots": [
@@ -23,6 +23,46 @@
         "sourcePath": "docs/screenshots/hollow-king.jpg",
         "deployedBuild": null,
         "captureDate": null
+      }
+    },
+    {
+      "path": "arcade/screenshots/ci-20261102-01.jpg",
+      "sha256": "256cf784825ac0921c9dde558cd5f036bfca4bc489feee837a0a6cb731954335",
+      "alt": "Cinderwake gameplay, view 1",
+      "provenance": {
+        "kind": "ci_gameplay_capture",
+        "sourcePath": "arcade/capture-evidence/ci-20261102-01.png",
+        "sourceSha256": "520f33741437d058deab61d747f1a8581dc46606cc2f3a214e3ad34456501f6a",
+        "captureCommit": "3f9bd3898c7c1985d5ea197c96690cafb916f701",
+        "workflowRunId": "41427998748",
+        "inputHashes": {
+          "index.html": "e3f576048a9ae2d3c8f0fea1ce7411b866039c8efbc8bc72f406ef5844165072",
+          "assets/index-CCN7jDZz.css": "f94a07b04ae968b600ebd8db1a3c8d6eb83964fb3435aaef2b49b8ada2ed1cdf",
+          "assets/index-CZJj2kDQ.js": "04a007833e07ae1948b6ebaa1e1b70add85e4e484335c631f438878117870db7"
+        },
+        "publishedFilesVerifiedAt": "2026-11-02T19:01:20Z",
+        "captureRecordPath": "arcade/capture-evidence/ci-20261102-record.json",
+        "captureRecordSha256": "e2fd20ad5fde15c25c648ffc20302b1d938425d675225a4a5315885283916dcc"
+      }
+    },
+    {
+      "path": "arcade/screenshots/ci-20261102-02.jpg",
+      "sha256": "90d6ab10f2d8fc00cd2deab13150362d3f8c068323c65d384cdca1133a07fdfa",
+      "alt": "Cinderwake gameplay, view 2",
+      "provenance": {
+        "kind": "ci_gameplay_capture",
+        "sourcePath": "arcade/capture-evidence/ci-20261102-02.png",
+        "sourceSha256": "6434d8b5522b38be1bbe1908832645b5c0e8833bc45590ee9efc76b2de092097",
+        "captureCommit": "3f9bd3898c7c1985d5ea197c96690cafb916f701",
+        "workflowRunId": "41427998748",
+        "inputHashes": {
+          "index.html": "e3f576048a9ae2d3c8f0fea1ce7411b866039c8efbc8bc72f406ef5844165072",
+          "assets/index-CCN7jDZz.css": "f94a07b04ae968b600ebd8db1a3c8d6eb83964fb3435aaef2b49b8ada2ed1cdf",
+          "assets/index-CZJj2kDQ.js": "04a007833e07ae1948b6ebaa1e1b70add85e4e484335c631f438878117870db7"
+        },
+        "publishedFilesVerifiedAt": "2026-11-02T19:01:20Z",
+        "captureRecordPath": "arcade/capture-evidence/ci-20261102-record.json",
+        "captureRecordSha256": "e2fd20ad5fde15c25c648ffc20302b1d938425d675225a4a5315885283916dcc"
       }
     }
   ]
