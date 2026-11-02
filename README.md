@@ -64,3 +64,7 @@ The image below is historical browser evidence from before the isometric correct
 ## Play online
 
 [Play the hosted game](https://intrepion.github.io/kata-inspired-by-diablo-ii-lord-of-destruction-codex-dot/)
+
+## Arcade metadata
+
+See [docs/arcade-metadata.md](docs/arcade-metadata.md) for the game-owned manifest and screenshot provenance.

@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "gameId": "kata-inspired-by-diablo-ii-lord-of-destruction-codex-dot",
+  "playUrl": "https://intrepion.github.io/kata-inspired-by-diablo-ii-lord-of-destruction-codex-dot/",
+  "screenshots": [
+    {
+      "path": "arcade/screenshots/view-01.jpg",
+      "sha256": "7a38ddb93c7ba91dd17a09290e7f9c692a0ec6b1fbce473ee4c29bebfe606cda",
+      "alt": "Gameplay capture 1",
+      "provenance": {
+        "kind": "existing_repository_capture",
+        "sourcePath": "docs/screenshots/desktop-sanctuary.jpg",
+        "deployedBuild": null,
+        "captureDate": null
+      }
+    },
+    {
+      "path": "arcade/screenshots/view-02.jpg",
+      "sha256": "c05a669eb6329817f2e2abd6fa807e672ac9ab5ef3d4ac3d6aada59b5634da69",
+      "alt": "Gameplay capture 2",
+      "provenance": {
+        "kind": "existing_repository_capture",
+        "sourcePath": "docs/screenshots/hollow-king.jpg",
+        "deployedBuild": null,
+        "captureDate": null
+      }
+    }
+  ]
+}
