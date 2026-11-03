@@ -147,6 +147,9 @@ function renderModal() {
   }
   if (modal === "skills")
     content = `<p>${state.points} unspent points. Each level grants one point. Every discipline has five ranks; choose a build that suits your next encounter.</p>${(["edge", "cinder", "resolve"] as const).map((k) => `<div class="discipline"><div><h3>${{ edge: "Oath of the Edge", cinder: "Heart of Cinder", resolve: "Keeper’s Resolve" }[k]} · ${state.ranks[k]}/5</h3><p>${{ edge: "+6 strike damage per rank. A relentless blade.", cinder: "+14 nova damage and faster cinder recovery per rank.", resolve: "+18 maximum vitality, armor, and movement speed per rank." }[k]}</p></div><button data-learn="${k}" ${state.points < 1 || state.ranks[k] >= 5 || state.mode === "dead" ? "disabled" : ""}>Learn</button></div>`).join("")}`;
+  if (modal === "skills")
+    content += `<h3>Attributes · ${state.attributes?.unspent ?? 0} unspent</h3><p>Each level adds five attribute points alongside your automatic level bonuses. Allocation increases a maximum without healing or refilling it.</p>${G.ATTRIBUTES.map((k) => `<div class="discipline"><div><h3>${k[0].toUpperCase() + k.slice(1)} · ${state.attributes?.ranks[k] ?? 0}</h3><p>${{ might: "+1 strike damage", agility: "+0.2 armor and +0.5 movement speed", vitality: "+3 maximum vitality", focus: "+2 maximum cinder" }[k]}</p></div><button data-attribute="${k}" aria-label="Increase ${k}" ${!state.attributes?.unspent || state.mode === "dead" || state.mode === "ending" ? "disabled" : ""}>Increase</button></div>`).join("")}`;
+
   if (modal === "help")
     content = `<p><b>Your oath</b> — Recover the three stolen embers. Clear each chamber and use the eastern gate. Defeat the Hollow King, then return the light to Vesper.</p><p><b>Fight</b> — The isometric camera follows you. Move in the view with WASD/arrows or click/tap the floor. Click a foe’s upright body to select it, pursue and strike that foe within blade range. A selected foe is never replaced by a closer one. Click another foe or the floor to change commands. Hold Space or Strike for melee. Q casts a wide nova (25 cinder). E performs an invulnerable Veilstep toward your movement or click destination. H drinks a flask.</p><p><b>Read the threat</b> — Rust circles mark a locked attack location. Step out before the attack lands. Wraiths pursue, stone brutes swing slowly, and ink scribes cast at range. The Bellkeeper rings around itself; the Matron spreads mire; the King calls overlapping judgement circles.</p><p><b>Prepare</b> — Nearby relics gather automatically if there is pack space. I opens equipment. K opens disciplines. R recalls to the sanctuary and refills health, cinder, and three flasks. Progress stays in the chamber. Death costs 20% gold; relics and experience remain.</p><p><b>Saving</b> — Whole-session autosave every two seconds and after commands. Your browser stores the save on this origin. Menus, focus loss, and hidden tabs freeze combat. No network or account is required.</p>`;
   if (modal === "pause")
@@ -178,6 +181,13 @@ function renderModal() {
           change(() =>
             G.learn(state, b.dataset.learn as keyof G.State["ranks"]),
           )),
+    );
+  document
+    .querySelectorAll<HTMLButtonElement>("[data-attribute]")
+    .forEach(
+      (b) =>
+        (b.onclick = () =>
+          change(() => G.allocate(state, b.dataset.attribute as G.Attribute))),
     );
   if ($("manual-save"))
     $("manual-save").onclick = () => {

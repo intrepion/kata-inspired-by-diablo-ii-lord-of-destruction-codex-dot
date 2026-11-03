@@ -42,7 +42,7 @@ If rebuilding after source changes, run `npm run build` and reload Chrome. `npm 
 | Return to sanctuary   | R or Recall                                                   |
 | Pause / resume        | Escape or Pause / Close                                       |
 
-Rust circles lock the attack location before harm. Move out or Veilstep. Menus pause combat. Recall fully restores health, cinder, and flasks while preserving chamber progress. Death retains relics/XP and retry costs 20% gold. The smith creates a random relic for gold. Better relics and different discipline ranks change your build.
+Rust circles lock the attack location before harm. Move out or Veilstep. Menus pause combat. Recall fully restores health, cinder, and flasks while preserving chamber progress. Death retains relics/XP and retry costs 20% gold. The smith creates a random relic for gold. Better relics and different discipline ranks change your build. Each level also grants five attribute points in the Disciplines menu: Might adds strike damage, Agility adds armor and speed, Vitality adds maximum health, and Focus adds maximum cinder. These supplement the existing automatic level bonuses; allocation does not heal or refill. Earlier saves receive unspent points for their earned levels without changing existing stats.
 
 The browser saves on this origin after commands and every two seconds. Reload restores the entire encounter. Changing browser/origin does not transfer saves. A storage error shows a warning. Pause → New keeper opens a confirmation; choosing its final action replaces the saved adventure. The known Chrome QA adventure at the sanctuary in cycle two is preserved. Use a separate coordinated origin for fresh acceptance; do not reset that existing keeper.
 

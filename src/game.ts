@@ -36,6 +36,13 @@ export type Chamber = {
   visited: boolean;
   seen: number[];
 };
+export type Attribute = "might" | "agility" | "vitality" | "focus";
+export const ATTRIBUTES: Attribute[] = [
+  "might",
+  "agility",
+  "vitality",
+  "focus",
+];
 export type State = {
   version: 1;
   seed: number;
@@ -47,6 +54,7 @@ export type State = {
   level: number;
   xp: number;
   points: number;
+  attributes?: { unspent: number; ranks: Record<Attribute, number> };
   ranks: { edge: number; cinder: number; resolve: number };
   gold: number;
   flasks: number;
@@ -126,14 +134,29 @@ export function makeRelic(s: State, slot: Slot, tier: number): Relic {
   };
 }
 export function stats(s: State) {
+  const a = s.attributes?.ranks ?? {
+    might: 0,
+    agility: 0,
+    vitality: 0,
+    focus: 0,
+  };
   return {
     maxHp:
-      100 + (s.level - 1) * 14 + s.gear.coat.power * 3 + s.ranks.resolve * 18,
-    attack: 18 + (s.level - 1) * 3 + s.gear.weapon.power * 2 + s.ranks.edge * 6,
-    armor: s.gear.coat.power * 0.6 + s.ranks.resolve * 1.5,
+      100 +
+      (s.level - 1) * 14 +
+      s.gear.coat.power * 3 +
+      s.ranks.resolve * 18 +
+      a.vitality * 3,
+    attack:
+      18 +
+      (s.level - 1) * 3 +
+      s.gear.weapon.power * 2 +
+      s.ranks.edge * 6 +
+      a.might,
+    armor: s.gear.coat.power * 0.6 + s.ranks.resolve * 1.5 + a.agility * 0.2,
     nova: 32 + s.gear.charm.power * 3 + s.ranks.cinder * 14,
-    maxMana: 80 + s.gear.charm.power * 3,
-    speed: 165 + s.ranks.resolve * 8,
+    maxMana: 80 + s.gear.charm.power * 3 + a.focus * 2,
+    speed: 165 + s.ranks.resolve * 8 + a.agility * 0.5,
   };
 }
 export function newGame(seed = Date.now()): State {
@@ -148,6 +171,10 @@ export function newGame(seed = Date.now()): State {
     level: 1,
     xp: 0,
     points: 0,
+    attributes: {
+      unspent: 0,
+      ranks: { might: 0, agility: 0, vitality: 0, focus: 0 },
+    },
     ranks: { edge: 0, cinder: 0, resolve: 0 },
     gold: 20,
     flasks: 3,
@@ -246,6 +273,27 @@ export function learn(s: State, path: keyof State["ranks"]) {
   s.points--;
   s.ranks[path]++;
   log(s, `${path[0].toUpperCase() + path.slice(1)} deepens.`);
+  return true;
+}
+// Attribute growth supplements the original automatic level bonuses.
+function attributeGrowth(s: State) {
+  return (s.attributes ??= {
+    unspent: Math.floor(s.level - 1) * 5,
+    ranks: { might: 0, agility: 0, vitality: 0, focus: 0 },
+  });
+}
+export function allocate(s: State, attribute: Attribute) {
+  if (
+    !ATTRIBUTES.includes(attribute) ||
+    s.mode === "dead" ||
+    s.mode === "ending"
+  )
+    return false;
+  const growth = attributeGrowth(s);
+  if (growth.unspent < 1) return false;
+  growth.unspent--;
+  growth.ranks[attribute]++;
+  log(s, `${attribute[0].toUpperCase() + attribute.slice(1)} grows.`);
   return true;
 }
 export function buy(s: State) {
@@ -369,11 +417,16 @@ function xp(s: State, amount: number) {
   s.xp += amount;
   while (s.xp >= 40 + s.level * 20) {
     s.xp -= 40 + s.level * 20;
+    const growth = attributeGrowth(s);
     s.level++;
+    growth.unspent += 5;
     s.points++;
     s.hp = stats(s).maxHp;
     s.mana = stats(s).maxMana;
-    log(s, `Level ${s.level}. A discipline point awakens.`);
+    log(
+      s,
+      `Level ${s.level}. A discipline point and five attribute points awaken.`,
+    );
   }
 }
 function damage(s: State, f: Foe, amount: number) {
@@ -574,6 +627,7 @@ export function restore(raw: string): State | null {
   try {
     const s = JSON.parse(raw);
     if (!validState(s)) return null;
+    attributeGrowth(s);
     for (const r of s.rooms)
       for (const f of r.foes) {
         f.timer = Math.max(0, f.timer);
@@ -640,6 +694,21 @@ function validState(s: unknown): s is State {
     )
   )
     return false;
+  if (v.attributes !== undefined) {
+    const a = v.attributes;
+    if (
+      !a ||
+      !a.ranks ||
+      !Number.isSafeInteger(a.unspent) ||
+      a.unspent < 0 ||
+      !ATTRIBUTES.every(
+        (k) => Number.isSafeInteger(a.ranks[k]) && a.ranks[k] >= 0,
+      ) ||
+      a.unspent + ATTRIBUTES.reduce((sum, k) => sum + a.ranks[k], 0) !==
+        5 * (v.level - 1)
+    )
+      return false;
+  }
   if (
     !v.gear ||
     !(["weapon", "coat", "charm"] as Slot[]).every(
