@@ -1,5 +1,7 @@
 # Cinderwake · The Hollow Crown
 
+[Kata Arcade](https://intrepion.github.io/)
+
 An original, compact dark-fantasy action RPG inspired by the exploration, loot, build choices, and recovery rhythm of classic action RPGs. Carry Iona's Cinder Lantern through the Ashen Steps, Drowned Archive, and Crownless Court. Defeat three sovereigns and bring dawn to Vesper.
 
 The field now uses an **isometric following camera** with world-space floor clicks, upright depth-sorted characters and explicit foe selection. It crops the existing chamber around the keeper instead of showing the whole room at once. A clicked foe remains the melee target; a closer foe cannot take its damage instead. Click another foe or open ground to issue a different command.
