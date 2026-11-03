@@ -4,65 +4,43 @@
   "playUrl": "https://intrepion.github.io/kata-inspired-by-diablo-ii-lord-of-destruction-codex-dot/",
   "screenshots": [
     {
-      "path": "arcade/screenshots/view-01.jpg",
-      "sha256": "7a38ddb93c7ba91dd17a09290e7f9c692a0ec6b1fbce473ee4c29bebfe606cda",
-      "alt": "Gameplay capture 1",
-      "provenance": {
-        "kind": "existing_repository_capture",
-        "sourcePath": "docs/screenshots/desktop-sanctuary.jpg",
-        "deployedBuild": null,
-        "captureDate": null
-      }
-    },
-    {
-      "path": "arcade/screenshots/view-02.jpg",
-      "sha256": "c05a669eb6329817f2e2abd6fa807e672ac9ab5ef3d4ac3d6aada59b5634da69",
-      "alt": "Gameplay capture 2",
-      "provenance": {
-        "kind": "existing_repository_capture",
-        "sourcePath": "docs/screenshots/hollow-king.jpg",
-        "deployedBuild": null,
-        "captureDate": null
-      }
-    },
-    {
-      "path": "arcade/screenshots/ci-20261102-01.jpg",
-      "sha256": "256cf784825ac0921c9dde558cd5f036bfca4bc489feee837a0a6cb731954335",
-      "alt": "Cinderwake gameplay, view 1",
+      "path": "arcade/screenshots/review-20261103-01.jpg",
+      "sha256": "0b77b8c1efdae58681a1091b5b1cfb4e8fd088d463ffef25d29588c9429b94f3",
+      "alt": "Cinderwake gameplay after the mechanics update, view 1",
       "provenance": {
         "kind": "ci_gameplay_capture",
-        "sourcePath": "arcade/capture-evidence/ci-20261102-01.png",
-        "sourceSha256": "520f33741437d058deab61d747f1a8581dc46606cc2f3a214e3ad34456501f6a",
-        "captureCommit": "3f9bd3898c7c1985d5ea197c96690cafb916f701",
-        "workflowRunId": "41427998748",
+        "sourcePath": "arcade/capture-evidence/review-20261103-01.png",
+        "sourceSha256": "51f716a6ae579b12a872587475425821020958361cd3e357e7f6a434b29a18e8",
+        "captureCommit": "902888d3347899e6d83a1e952d2de66f13ae1754",
+        "workflowRunId": "41675637400",
         "inputHashes": {
-          "index.html": "e3f576048a9ae2d3c8f0fea1ce7411b866039c8efbc8bc72f406ef5844165072",
+          "index.html": "b926519782f60a5aa3d8cec68766be966243f14c11abe33d49535761b0201b4c",
           "assets/index-CCN7jDZz.css": "f94a07b04ae968b600ebd8db1a3c8d6eb83964fb3435aaef2b49b8ada2ed1cdf",
-          "assets/index-CZJj2kDQ.js": "04a007833e07ae1948b6ebaa1e1b70add85e4e484335c631f438878117870db7"
+          "assets/index-CFqbouLo.js": "716629e653f76f884d055887d3afced4e680329d6f796ec57c18de8a8d9d8088"
         },
-        "publishedFilesVerifiedAt": "2026-11-02T19:01:20Z",
-        "captureRecordPath": "arcade/capture-evidence/ci-20261102-record.json",
-        "captureRecordSha256": "e2fd20ad5fde15c25c648ffc20302b1d938425d675225a4a5315885283916dcc"
+        "publishedFilesVerifiedAt": "2026-11-03T16:39:50Z",
+        "captureRecordPath": "arcade/capture-evidence/review-20261103-record.json",
+        "captureRecordSha256": "cf73014cd9ee71b8e4f9de5e851f85fed238b36a2387c910a68fc278424814ca"
       }
     },
     {
-      "path": "arcade/screenshots/ci-20261102-02.jpg",
-      "sha256": "90d6ab10f2d8fc00cd2deab13150362d3f8c068323c65d384cdca1133a07fdfa",
-      "alt": "Cinderwake gameplay, view 2",
+      "path": "arcade/screenshots/review-20261103-02.jpg",
+      "sha256": "0e788e8d8d4d696abaf1f6ad41c0649f10e897ddfeb50b7d01af72e4a254e40c",
+      "alt": "Cinderwake gameplay after the mechanics update, view 2",
       "provenance": {
         "kind": "ci_gameplay_capture",
-        "sourcePath": "arcade/capture-evidence/ci-20261102-02.png",
-        "sourceSha256": "6434d8b5522b38be1bbe1908832645b5c0e8833bc45590ee9efc76b2de092097",
-        "captureCommit": "3f9bd3898c7c1985d5ea197c96690cafb916f701",
-        "workflowRunId": "41427998748",
+        "sourcePath": "arcade/capture-evidence/review-20261103-02.png",
+        "sourceSha256": "05fc31513ceece25e63031f41cfe4fd54902e67add32e24021c06a1f723b1c26",
+        "captureCommit": "902888d3347899e6d83a1e952d2de66f13ae1754",
+        "workflowRunId": "41675637400",
         "inputHashes": {
-          "index.html": "e3f576048a9ae2d3c8f0fea1ce7411b866039c8efbc8bc72f406ef5844165072",
+          "index.html": "b926519782f60a5aa3d8cec68766be966243f14c11abe33d49535761b0201b4c",
           "assets/index-CCN7jDZz.css": "f94a07b04ae968b600ebd8db1a3c8d6eb83964fb3435aaef2b49b8ada2ed1cdf",
-          "assets/index-CZJj2kDQ.js": "04a007833e07ae1948b6ebaa1e1b70add85e4e484335c631f438878117870db7"
+          "assets/index-CFqbouLo.js": "716629e653f76f884d055887d3afced4e680329d6f796ec57c18de8a8d9d8088"
         },
-        "publishedFilesVerifiedAt": "2026-11-02T19:01:20Z",
-        "captureRecordPath": "arcade/capture-evidence/ci-20261102-record.json",
-        "captureRecordSha256": "e2fd20ad5fde15c25c648ffc20302b1d938425d675225a4a5315885283916dcc"
+        "publishedFilesVerifiedAt": "2026-11-03T16:39:50Z",
+        "captureRecordPath": "arcade/capture-evidence/review-20261103-record.json",
+        "captureRecordSha256": "cf73014cd9ee71b8e4f9de5e851f85fed238b36a2387c910a68fc278424814ca"
       }
     }
   ]

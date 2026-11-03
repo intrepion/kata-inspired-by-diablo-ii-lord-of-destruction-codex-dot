@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "workflowCommit": "902888d3347899e6d83a1e952d2de66f13ae1754",
+  "sourceCommit": "902888d3347899e6d83a1e952d2de66f13ae1754",
+  "runId": "41675637400",
+  "url": "http://127.0.0.1:4280/",
+  "inputs": {
+    "index.html": "b926519782f60a5aa3d8cec68766be966243f14c11abe33d49535761b0201b4c",
+    "assets/index-CCN7jDZz.css": "f94a07b04ae968b600ebd8db1a3c8d6eb83964fb3435aaef2b49b8ada2ed1cdf",
+    "assets/index-CFqbouLo.js": "716629e653f76f884d055887d3afced4e680329d6f796ec57c18de8a8d9d8088"
+  },
+  "browser": "153.0.8010.12",
+  "viewport": {
+    "width": 1280,
+    "height": 1000
+  },
+  "screenshots": [
+    "cinderwake-01.png",
+    "cinderwake-02.png"
+  ]
+}
